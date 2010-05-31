@@ -108,9 +108,8 @@ res->code and res->message are the returned HTTP code and message.
 
 =cut
 
-__PACKAGE__->attr(client => sub { Mojo::Client->new });
 __PACKAGE__->attr(server_url => '');
-__PACKAGE__->attr([qw(app res)]);
+__PACKAGE__->attr([qw(res client)]);
 
 sub import
 {
@@ -137,19 +136,23 @@ sub new
 {
     my $self = shift->SUPER::new(@_);
 
-    if ($self->app)
+    if ($self->{app})
     {
-        $self->client->app($self->app);
-    }
-    elsif (not length $self->server_url)
-    {
-        (my $appname = ref $self) =~ s/:.*$//;
-        $self->server_url(Clustericious::Config->new($appname)->url);
+        my $client = Mojo::Client->new(app => $self->{app})
+            or return undef;
+
+        $self->client($client);
     }
     else
     {
-        return undef;
+        $self->client(Mojo::Client->new);
+        if (not length $self->server_url)
+        {
+            (my $appname = ref $self) =~ s/:.*$//;
+            $self->server_url(Clustericious::Config->new($appname)->url);
+        }
     }
+
     return $self;
 }
 
