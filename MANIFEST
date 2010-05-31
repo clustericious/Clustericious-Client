@@ -11,4 +11,5 @@ t/datetime.t
 t/params.t
 t/object.t
 t/object_derived.t
+t/object_array.t
 t/podcoverage.t

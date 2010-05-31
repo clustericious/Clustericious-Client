@@ -107,7 +107,7 @@ sub new
     {
         foreach (@$self)
         {
-            $_ = $class->new($_, $client) if ref;
+            $_ = $class->new($_, $client) if ref eq 'HASH';
         }
         return $self;
     }
