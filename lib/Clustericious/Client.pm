@@ -3,7 +3,7 @@ package Clustericious::Client;
 use strict; no strict 'refs';
 use warnings;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
@@ -294,9 +294,11 @@ sub _doit
         }
     }
 
-    return $self->client->_build_tx($method, $url, $headers, $body, $cb) if $cb;
+    return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
-    my $tx = $self->client->_build_tx($method, $url, $headers, $body);
+    my $tx = $self->client->build_tx($method, $url, $headers, $body);
+
+    $self->client->process($tx);
 
     $self->res($tx->res);
 

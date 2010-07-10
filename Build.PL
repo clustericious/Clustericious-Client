@@ -9,7 +9,7 @@ my $build = Module::Build->new(
     module_name => 'Clustericious::Client',
     dist_version_from => 'lib/Clustericious/Client.pm',
     requires => {
-        'Mojo::Client'  => 0,
+        'Mojolicious'   => 0.999926,
         'Clustericious' => 0,
         'JSON::XS'      => 0,
     }
