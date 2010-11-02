@@ -79,7 +79,7 @@ use Mojo::ByteStream qw/b/;
 use JSON::XS;
 use Clustericious::Config;
 use Clustericious::Client::Object;
-use Clustericious::Client::Command;
+use Clustericious::Client::Meta;
 use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
 
@@ -211,7 +211,7 @@ sub route
     my $url      = pop || "/$subname";
     my $method   = shift || 'GET';
 
-    Clustericious::Client::Command->add_route(scalar caller(),$subname,$doc);
+    Clustericious::Client::Meta->add_route(scalar caller(),$subname,$doc);
     if ($objclass)
     {
         eval "require $objclass";
@@ -269,7 +269,7 @@ sub object
 
     $objclass = 'Clustericious::Client::Object' unless $objclass->can('new');
 
-    Clustericious::Client::Command->add_object(scalar caller(),$objname,$doc);
+    Clustericious::Client::Meta->add_object(scalar caller(),$objname,$doc);
 
     *{"${caller}::$objname"} = 
     sub

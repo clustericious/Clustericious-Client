@@ -27,29 +27,14 @@ use YAML::XS qw(Load Dump LoadFile);
 use Log::Log4perl qw/:easy/;
 use Data::Dumper;
 
-our @Routes;
-our @Objects;
-
-sub add_route { # Keep track of routes that have are added.
-    my $class      = shift;
-    my $class_for  = shift;         # e.g. Restmd::Client
-    my $route_name = shift;         # same as $subname
-    my $route_doc  = shift || '';
-    push @Routes, [ $route_name => $route_doc ];
-}
-
-sub add_object {
-    my $class    = shift;
-    my $for      = shift;
-    my $obj_name = shift;
-    my $obj_doc  = shift || '';
-    push @Objects, [ $obj_name => $obj_doc ];
-}
+use Clustericious::Client::Meta;
 
 sub _usage {
+    my $class = shift;
+    my $client = shift;
     my $msg = shift;
-    my $routes = \@Routes;
-    my $objects = \@Objects;
+    my $routes = Clustericious::Client::Meta->routes(ref $client);
+    my $objects = Clustericious::Client::Meta->objects(ref $client);
     print STDERR $msg,"\n" if $msg;
     print STDERR <<EOPRINT;
 Usage:
@@ -64,6 +49,7 @@ Usage:
 
     and "<object>" may be one of the following :
 @{[ join "\n", map "      $_->[0] $_->[1]", @$objects ]}
+
 EOPRINT
 
     exit 0;
@@ -84,14 +70,14 @@ sub run
 
     my $method = shift @_;
 
-    _usage() unless $method;
+    $class->_usage($client) unless $method;
 
     if ($method eq 'create')
     {
         $method = shift @_;
-        _usage("Missing <object>") unless $method;
+        $class->_usage($client,"Missing <object>") unless $method;
 
-        _usage("Invalid method $method") unless $client->can($method);
+        $class->_usage($client,"Invalid method $method") unless $client->can($method);
 
         if (@_)
         {
@@ -116,7 +102,7 @@ sub run
     if ($method eq 'update')
     {
         $method = shift @_;
-        _usage("Missing <object>") unless $method;
+        $class->_usage($client,"Missing <object>") unless $method;
 
         my $content;
         if (-r $_[-1])  # Does it look like a filename?
@@ -140,11 +126,11 @@ sub run
     if ($method eq 'delete')
     {
         $method = shift @_;
-        _usage("Missing <object>") unless $method;
+        $class->_usage($client,"Missing <object>") unless $method;
 
         $method .= '_delete';
 
-        _usage("Invalid object $method") unless $client->can($method);
+        $class->_usage($client,"Invalid object $method") unless $client->can($method);
 
         $client->$method(@_) or ERROR $client->errorstring;
         return;
@@ -163,8 +149,8 @@ sub run
         return;
     }
 
-    _usage if $ARGV[0] =~ /help/;
-    _usage( "Unrecognized arguments");
+    $class->_usage($client) if $ARGV[0] =~ /help/;
+    $class->_usage($client, "Unrecognized arguments");
 }
 
 1;

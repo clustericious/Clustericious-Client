@@ -5,6 +5,8 @@ use warnings;
 
 use Test::More tests => 3;
 
+Log::Log4perl->easy_init(level => "WARN");
+
 package Fake::Object::Thing;
 
 my $persist;  # Always find the last one created
