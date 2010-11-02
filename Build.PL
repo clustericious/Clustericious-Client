@@ -10,7 +10,7 @@ my $build = Module::Build->new(
     dist_version_from => 'lib/Clustericious/Client.pm',
     dist_author => 'Curt Tilmes <Curt.Tilmes@nasa.gov>',
     requires => {
-        'Mojolicious'   => 0.999926,
+        'Mojolicious'   => 0.999934,
         'Clustericious::Config' => '0.01',
         'JSON::XS'      => 0,
     }

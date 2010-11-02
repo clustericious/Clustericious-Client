@@ -24,7 +24,50 @@ use strict;
 use warnings;
 
 use YAML::XS qw(Load Dump LoadFile);
+use Log::Log4perl qw/:easy/;
 use Data::Dumper;
+
+our @Routes;
+our @Objects;
+
+sub add_route { # Keep track of routes that have are added.
+    my $class      = shift;
+    my $class_for  = shift;         # e.g. Restmd::Client
+    my $route_name = shift;         # same as $subname
+    my $route_doc  = shift || '';
+    push @Routes, [ $route_name => $route_doc ];
+}
+
+sub add_object {
+    my $class    = shift;
+    my $for      = shift;
+    my $obj_name = shift;
+    my $obj_doc  = shift || '';
+    push @Objects, [ $obj_name => $obj_doc ];
+}
+
+sub _usage {
+    my $msg = shift;
+    my $routes = \@Routes;
+    my $objects = \@Objects;
+    print STDERR $msg,"\n" if $msg;
+    print STDERR <<EOPRINT;
+Usage:
+@{[ join "\n", map "       $0 [log options] $_->[0] $_->[1]", @$routes ]}
+       $0 [log options] <object>
+       $0 [log options] <object> <keys>
+       $0 [log options] create <object> [<filename list>]
+       $0 [log options] update <object> <keys> [<filename>]
+       $0 [log options] delete <object> <keys>
+
+    where "log options" are as described in Log::Log4perl::CommandLine.
+
+    and "<object>" may be one of the following :
+@{[ join "\n", map "      $_->[0] $_->[1]", @$objects ]}
+EOPRINT
+
+    exit 0;
+}
 
 =head1 METHODS
 
@@ -41,34 +84,31 @@ sub run
 
     my $method = shift @_;
 
-    return warn "Usage: $0 <object> <keys>\n" .
-                "       $0 create <object> [<filename list>]\n" .
-                "       $0 update <object> <keys> [<filename>]\n" .
-                "       $0 delete <object> <keys>\n" unless $method;
+    _usage() unless $method;
 
     if ($method eq 'create')
     {
         $method = shift @_;
-        die "Missing <object>\n" unless $method;
+        _usage("Missing <object>") unless $method;
 
-        die "Invalid method $method\n" unless $client->can($method);
+        _usage("Invalid method $method") unless $client->can($method);
 
         if (@_)
         {
             foreach my $filename (@_)
             {
                 my $content = LoadFile($filename)
-                    or die "Invalid YAML : $filename\n";
+                    or LOGDIE "Invalid YAML : $filename\n";
                 print "Loading $filename\n";
-                $client->$method($content) or warn $client->errorstring;
+                $client->$method($content) or ERROR $client->errorstring;
             }
         }
         else
         {
             my $content = Load(join('', <>))
-                or die "Invalid YAML content\n";
+                or LOGDIE "Invalid YAML content\n";
 
-            $client->$method($content) or warn $client->errorstring;
+            $client->$method($content) or ERROR $client->errorstring;
         }
         return;
     }
@@ -76,23 +116,23 @@ sub run
     if ($method eq 'update')
     {
         $method = shift @_;
-        die "Missing <object>\n" unless $method;
+        _usage("Missing <object>") unless $method;
 
         my $content;
         if (-r $_[-1])  # Does it look like a filename?
         {
             my $filename = pop @_;
             $content = LoadFile($filename)
-                or die "Invalid YAML: $filename\n";
+                or LOGDIE "Invalid YAML: $filename\n";
             print "Loading $filename\n";
         }
         else
         {
             $content = Load(join('', <STDIN>))
-                or die "Invalid YAML: stdin\n";
+                or LOGDIE "Invalid YAML: stdin\n";
         }
         my $ret = $client->$method(@_, $content)
-            or warn $client->errorstring;
+            or ERROR $client->errorstring;
         print Dump($ret);
         return;
     }
@@ -100,13 +140,13 @@ sub run
     if ($method eq 'delete')
     {
         $method = shift @_;
-        die "Missing <object>\n" unless $method;
+        _usage("Missing <object>") unless $method;
 
         $method .= '_delete';
 
-        die "Invalid object $method\n" unless $client->can($method);
+        _usage("Invalid object $method") unless $client->can($method);
 
-        $client->$method(@_) or warn $client->errorstring;
+        $client->$method(@_) or ERROR $client->errorstring;
         return;
     }
 
@@ -118,12 +158,13 @@ sub run
         }
         else
         {
-            warn $client->errorstring;
+            ERROR $client->errorstring;
         }
         return;
     }
 
-    die "Invalid args\n";
+    _usage if $ARGV[0] =~ /help/;
+    _usage( "Unrecognized arguments");
 }
 
 1;

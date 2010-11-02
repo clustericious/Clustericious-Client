@@ -29,6 +29,8 @@ Clustericious::Client - Constructor for clients of Clustericious apps
 
  object 'foo' => '/something/foo';         # Can override the URL
 
+ route status => \"Get the status";        # Scalar refs are documentation
+
  ----------------------------------------------------------------------
 
  use Foo::Client;
@@ -73,9 +75,13 @@ a data structure if it is application/json.
 use base 'Mojo::Base';
 
 use Mojo::Client;
+use Mojo::ByteStream qw/b/;
 use JSON::XS;
 use Clustericious::Config;
 use Clustericious::Client::Object;
+use Clustericious::Client::Command;
+use MojoX::Log::Log4perl;
+use Log::Log4perl qw/:easy/;
 
 =head1 ATTRIBUTES
 
@@ -116,7 +122,7 @@ sub import
     my $class = shift;
     my $caller = caller;
 
-    push @{"${caller}::ISA"}, $class;
+    push @{"${caller}::ISA"}, $class unless $caller->isa($class);
     *{"${caller}::route"} = \&route;
     *{"${caller}::object"} = \&object;
     *{"${caller}::import"} = sub {};
@@ -153,6 +159,8 @@ sub new
         }
     }
 
+    $self->client->log(MojoX::Log::Log4perl->new);
+
     return $self;
 }
 
@@ -169,7 +177,8 @@ parts)
 sub errorstring
 {
     my $self = shift;
-    "Error: (" . $self->res->code . ") " . $self->res->message . "\n";
+    $self->res->error
+      || sprintf( "(%d) %s", $self->res->code, $self->res->message );
 }
 
 =head1 FUNCTIONS
@@ -182,21 +191,27 @@ sub errorstring
  route subname => POST => '/url';    # POST /url
  route subname => DELETE => '/url';  # DELETE /url
  route subname => ['SomeObjectClass'];
+ route subname \"<documentation> <for> <some> <args>";
 
 Makes a method subname() that does the REST action.  Any scalar
 arguments are tacked onto the end of the url.  If you pass a hash
 reference, the method changes to POST and the hash is encoded into the
-body as application/json.
+body as application/json.  
+
+A scalar reference as the final argument adds documentation
+about arguments for this route.
 
 =cut 
 
 sub route
 {
     my $subname = shift;
-    my $objclass = shift->[0] if ref $_[0] eq 'ARRAY';
-    my $url     = pop || "/$subname";
-    my $method  = shift || 'GET';
+    my $objclass = ref $_[0] eq 'ARRAY' ? shift->[0] : undef;
+    my $doc      = ref $_[-1] eq 'SCALAR' ? ${ pop() } : "";
+    my $url      = pop || "/$subname";
+    my $method   = shift || 'GET';
 
+    Clustericious::Client::Command->add_route(scalar caller(),$subname,$doc);
     if ($objclass)
     {
         eval "require $objclass";
@@ -244,7 +259,8 @@ sub object
 {
     my $objname = shift;
     my $url     = shift || "/$objname";
-    my $caller = caller;
+    my $doc     = ref $_[-1] eq 'SCALAR' ? ${ pop() } : '';
+    my $caller  = caller;
 
     my $objclass = "${caller}::" .
         join('', map { ucfirst } split('_', $objname)); # foo_bar => FooBar
@@ -252,6 +268,8 @@ sub object
     eval "require $objclass";
 
     $objclass = 'Clustericious::Client::Object' unless $objclass->can('new');
+
+    Clustericious::Client::Command->add_object(scalar caller(),$objname,$doc);
 
     *{"${caller}::$objname"} = 
     sub
@@ -264,6 +282,7 @@ sub object
     *{"${caller}::${objname}_delete"} = 
         sub { shift->_doit(DELETE => $url, @_) };
 }
+
 
 sub _doit
 {
@@ -294,6 +313,7 @@ sub _doit
         }
     }
 
+    DEBUG "Sending $method request to $url";
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
@@ -302,8 +322,12 @@ sub _doit
 
     $self->res($tx->res);
 
-    return undef unless $tx->res->is_status_class(200);
+    unless ($tx->res->is_status_class(200)) {
+        ERROR "Error trying to $method $url : ".$tx->error;
+        return undef;
+    }
 
+    TRACE "Got response : ".$tx->res;
     return $tx->res->headers->content_type eq 'application/json'
            ? decode_json($tx->res->body)
            : $tx->res->body;
