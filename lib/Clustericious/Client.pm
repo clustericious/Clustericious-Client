@@ -159,7 +159,22 @@ sub new
         }
     }
 
-    $self->client->log(MojoX::Log::Log4perl->new);
+    $self->client->keep_alive_timeout($ENV{CLUSTERICIOUS_KEEP_ALIVE_TIMEOUT} || 300);
+    my $logger = MojoX::Log::Log4perl->new;
+    $self->client->log($logger);
+    if ( $logger->is_trace ) {
+        my $elapsed;
+        my $started;
+        $self->client->ioloop->timer( 2 => sub { $elapsed = 2; $started = time; } );
+        $self->client->ioloop->on_tick(
+            sub {
+                return unless $started;
+                return if $elapsed >= time - $started;
+                $elapsed = time - $started;
+                $logger->trace("waiting $elapsed");
+            }
+        );
+    }
 
     return $self;
 }
