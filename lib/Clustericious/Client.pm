@@ -115,7 +115,7 @@ res->code and res->message are the returned HTTP code and message.
 =cut
 
 __PACKAGE__->attr(server_url => '');
-__PACKAGE__->attr([qw(res client)]);
+__PACKAGE__->attr([qw(res userinfo client)]);
 
 sub import
 {
@@ -154,8 +154,7 @@ sub new
         $self->client(Mojo::Client->new);
         if (not length $self->server_url)
         {
-            (my $appname = ref $self) =~ s/:.*$//;
-            $self->server_url(Clustericious::Config->new($appname)->url);
+            $self->server_url($self->_config->url);
         }
     }
 
@@ -177,6 +176,25 @@ sub new
     }
 
     return $self;
+}
+
+=head2 C<login>
+
+Log in to the server.  This will send basic auth info
+along with every subsequent request.
+
+    $f->login; # looks for username and password in $app.conf
+    $f->login(username => "elmer", password => "fudd");
+
+=cut
+
+sub login {
+    my $self = shift;
+    my %args = @_;
+    my ($user,$pw) =
+        @_ ?  @args{qw/username password/}
+           :  map $self->_config->$_, qw/username password/;
+    $self->userinfo(join ':', $user,$pw);
 }
 
 =head2 C<errorstring>
@@ -298,13 +316,14 @@ sub object
         sub { shift->_doit(DELETE => $url, @_) };
 }
 
-
 sub _doit
 {
     my $self = shift;
     my ($method, $url, @args) = @_;
 
     $url = $self->server_url . $url if $self->server_url;
+    $url = Mojo::URL->new($url) unless ref $url;
+    $url->userinfo($self->userinfo) if $self->userinfo;
 
     my $cb;
     my $body = '';
@@ -328,7 +347,7 @@ sub _doit
         }
     }
 
-    DEBUG "Sending $method request to $url";
+    DEBUG "Sending $method request to " ._sanitize_url($url);
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
@@ -337,8 +356,16 @@ sub _doit
 
     $self->res($tx->res);
 
+    if ($tx->res->code == 401 && !$url->userinfo && $self->_has_auth) {
+        DEBUG "received code 401, trying again with credentials";
+        $self->login;
+        return $self->_doit(@_);
+    }
+
     unless ($tx->res->is_status_class(200)) {
-        ERROR "Error trying to $method $url : ".$tx->error;
+        my $body = $tx->res->body || '';
+        $body &&= " ($body)";
+        ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error.$body;
         return undef;
     }
 
@@ -370,6 +397,29 @@ sub _mycallback
             $cb->();
         }
     }
+}
+
+sub _sanitize_url {
+    # Remove passwords from urls for displaying
+    my $url = shift;
+    $url = Mojo::URL->new($url) unless ref $url eq "Mojo::URL";
+    return $url unless $url->userinfo;
+    my $c = $url->clone;
+    $c->userinfo("user:*****");
+    return $c;
+}
+
+sub _config {
+    my $self = shift;
+    (my $appname = ref $self) =~ s/:.*$//;
+    return Clustericious::Config->new($appname);
+}
+
+sub _has_auth {
+    my $self = shift;
+    return 0 unless $self->_config->username(default => '');
+    return 0 unless $self->_config->password(default => '');
+    return 1;
 }
 
 1;
