@@ -442,6 +442,12 @@ sub version {
     $self->_doit(GET => '/version');
 }
 
+=item status
+
+Retrieve the status from the server.
+
+=cut
+
 sub status {
     my $self = shift;
     $self->_doit(GET => '/status');
