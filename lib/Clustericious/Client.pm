@@ -322,8 +322,6 @@ sub _doit
     my ($method, $url, @args) = @_;
 
     $url = $self->server_url . $url if $self->server_url;
-    $url = Mojo::URL->new($url) unless ref $url;
-    $url->userinfo($self->userinfo) if $self->userinfo;
 
     my $cb;
     my $body = '';
@@ -346,6 +344,8 @@ sub _doit
             $url .= "/$arg";
         }
     }
+    $url = Mojo::URL->new($url) unless ref $url;
+    $url->userinfo($self->userinfo) if $self->userinfo;
 
     DEBUG "Sending $method request to " ._sanitize_url($url);
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
