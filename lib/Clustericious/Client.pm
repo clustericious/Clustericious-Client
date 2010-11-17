@@ -356,7 +356,7 @@ sub _doit
 
     $self->res($tx->res);
 
-    if ($tx->res->code == 401 && !$url->userinfo && $self->_has_auth) {
+    if (($tx->res->code||0) == 401 && !$url->userinfo && $self->_has_auth) {
         DEBUG "received code 401, trying again with credentials";
         $self->login;
         return $self->_doit(@_);
@@ -420,6 +420,31 @@ sub _has_auth {
     return 0 unless $self->_config->username(default => '');
     return 0 unless $self->_config->password(default => '');
     return 1;
+}
+
+=head1 COMMON ROUTES
+
+These are routes that are automatically supported by all clients.
+See L<Clustericious::RouteBuilder::Common>.  Each of these
+must also be in L<Clustericious::Client::Meta> for there
+to be documentation.
+
+=over
+
+=item version
+
+Retrieve the version on the server.
+
+=cut
+
+sub version {
+    my $self = shift;
+    $self->_doit(GET => '/version');
+}
+
+sub status {
+    my $self = shift;
+    $self->_doit(GET => '/status');
 }
 
 1;

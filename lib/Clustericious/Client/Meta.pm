@@ -14,6 +14,7 @@ use warnings;
 
 our %Routes; # hash from class name to array ref of routes.
 our %Objects; # hash from class name to array ref of objects.
+our @CommonRoutes = ( [ "version" ], [ "status" ] );
 
 =item add_route
 
@@ -66,7 +67,7 @@ documentation.
 sub routes {
     my $class = shift;
     my $for = shift;
-    return $Routes{$for};
+    return [ @CommonRoutes, @{$Routes{$for}}];
 }
 
 sub objects {
