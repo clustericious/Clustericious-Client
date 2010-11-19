@@ -76,6 +76,7 @@ use base 'Mojo::Base';
 
 use Mojo::Client;
 use Mojo::ByteStream qw/b/;
+use Mojo::Parameters;
 use JSON::XS;
 use Clustericious::Config;
 use Clustericious::Client::Object;
@@ -227,12 +228,16 @@ sub errorstring
  route subname \"<documentation> <for> <some> <args>";
 
 Makes a method subname() that does the REST action.  Any scalar
-arguments are tacked onto the end of the url.  If you pass a hash
-reference, the method changes to POST and the hash is encoded into the
-body as application/json.  
+arguments are tacked onto the end of the url separated by a slash.
+If any argument begins with "--", it and its successor are treated
+as part of URL query string (for a GET request), or all arguments
+are treated as a hash reference (for a POST).  If you pass a hash
+reference, the method changes to POST and the hash is encoded into
+the body as application/json.
 
 A scalar reference as the final argument adds documentation
-about arguments for this route.
+about this route which will be displayed by the command-line
+client.
 
 =cut 
 
@@ -327,6 +332,12 @@ sub _doit
     my $body = '';
     my $headers = {};
 
+    if ($method eq 'POST' && grep /^--/, @args) {
+        s/^--// for @args;
+        @args = ( { @args } );
+    }
+
+    my $parameters = Mojo::Parameters->new();
     while (my $arg = shift @args)
     {
         if (ref $arg eq 'HASH')
@@ -339,12 +350,17 @@ sub _doit
         {
             $cb = $self->_mycallback($arg);
         }
+        elsif ($method eq "GET" && $arg =~ s/^--//) {
+            my $value = shift @args;
+            $parameters->append($arg => $value);
+        }
         else
         {
             $url .= "/$arg";
         }
     }
     $url = Mojo::URL->new($url) unless ref $url;
+    $url->query($parameters);
     $url->userinfo($self->userinfo) if $self->userinfo;
 
     DEBUG "Sending $method request to " ._sanitize_url($url);
