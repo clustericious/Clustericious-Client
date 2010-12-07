@@ -235,6 +235,8 @@ are treated as a hash reference (for a POST).  If you pass a hash
 reference, the method changes to POST and the hash is encoded into
 the body as application/json.
 
+A hash reference after a POST method becomes headers.
+
 A scalar reference as the final argument adds documentation
 about this route which will be displayed by the command-line
 client.
@@ -353,6 +355,10 @@ sub _doit
         elsif ($method eq "GET" && $arg =~ s/^--//) {
             my $value = shift @args;
             $parameters->append($arg => $value);
+        }
+        elsif ($method eq "POST" && !ref $arg) {
+            $body = $arg;
+            $headers = shift @args if $args[0] && ref $args[0] eq 'HASH';
         }
         else
         {
