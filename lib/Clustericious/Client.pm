@@ -475,4 +475,15 @@ sub status {
     $self->_doit(GET => '/status');
 }
 
+=item api
+
+Retrieve the API from the server
+
+=cut
+
+sub api {
+    my $self = shift;
+    $self->_doit(GET => '/api');
+}
+
 1;
