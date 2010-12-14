@@ -15,5 +15,6 @@ my $build = Module::Build->new(
         'Log::Log4perl::CommandLine' => 0,
         'MojoX::Log::Log4perl' => 0,
         'JSON::XS'      => 0,
+        'Proc::Background' => 0,
     }
 )->create_build_script;

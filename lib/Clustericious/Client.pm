@@ -83,6 +83,7 @@ use Clustericious::Client::Object;
 use Clustericious::Client::Meta;
 use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
+use Proc::Background;
 
 =head1 ATTRIBUTES
 
@@ -137,6 +138,25 @@ sub import
  my $f = Foo::Client->new(server_url => 'http://someurl');
  my $f = Foo::Client->new(app => 'MyApp'); # For testing...
 
+If the configuration file has a "url" entry, this will
+be used as the default url (first case above).  Additionally,
+if the ssh_tunnel key is given in the config file, a tunnel
+may be created automatically (and destroyed when the client
+is destroyed).  Here's a sample configuration :
+
+   "url" : "http://localhost:12345",
+   "ssh_tunnel" : {
+        "remote_host" : "omidev",
+        "server_host" : "localhost",
+        "server_port" : "9014"
+    },
+
+This would automatically execute this
+
+    ssh -N -L12345:localhost:9014 omidev
+
+in the background.
+
 =cut 
 
 sub new
@@ -174,6 +194,9 @@ sub new
                 $logger->trace("waiting $elapsed");
             }
         );
+    }
+    if ($self->_config->ssh_tunnel(default => '')) {
+        $self->_start_ssh_tunnel;
     }
 
     return $self;
@@ -431,10 +454,15 @@ sub _sanitize_url {
     return $c;
 }
 
-sub _config {
+sub _appname {
     my $self = shift;
     (my $appname = ref $self) =~ s/:.*$//;
-    return Clustericious::Config->new($appname);
+    return $appname;
+}
+
+sub _config {
+    my $self = shift;
+    return Clustericious::Config->new($self->_appname);
 }
 
 sub _has_auth {
@@ -485,5 +513,25 @@ sub api {
     my $self = shift;
     $self->_doit(GET => '/api');
 }
+
+
+sub _start_ssh_tunnel {
+    my $self = shift;
+    my $conf = $self->_config->ssh_tunnel;
+
+    my $url = Mojo::URL->new($self->server_url);
+    my $cmd = sprintf(
+        "ssh -N -L%d:%s:%d %s",
+        $url->port,         $conf->server_host,
+        $conf->server_port, $conf->remote_host
+    );
+    INFO "Executing $cmd";
+    my $proc = Proc::Background->new({die_upon_destroy=>1},$cmd);
+    sleep 1;
+    $proc->alive or FATAL "Could not start $cmd";
+    INFO "ssh pid is ".$proc->pid;
+    $self->{proc} = $proc;
+}
+
 
 1;
