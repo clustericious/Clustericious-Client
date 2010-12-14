@@ -16,5 +16,6 @@ my $build = Module::Build->new(
         'MojoX::Log::Log4perl' => 0,
         'JSON::XS'      => 0,
         'Proc::Background' => 0,
+        'File::Temp' => 0,
     }
 )->create_build_script;
