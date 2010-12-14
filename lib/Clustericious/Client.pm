@@ -517,24 +517,36 @@ sub api {
 
 sub _start_ssh_tunnel {
     my $self = shift;
-    my $conf = $self->_config->ssh_tunnel;
 
+    my $pidfile = sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),$self->_appname);
+    if (-e $pidfile) {
+        my ($pid) = IO::File->new("<$pidfile")->getlines;
+        if (kill 0, $pid) {
+            DEBUG "found running ssh ($pid)";
+            return;
+        }
+    }
+
+    my $conf = $self->_config->ssh_tunnel;
     my $error_file = File::Temp->new();
     my $url = Mojo::URL->new($self->server_url);
     my $cmd = sprintf(
         "ssh -N -L%d:%s:%d %s 2>$error_file",
-        $url->port,         $conf->server_host,
-        $conf->server_port, $conf->remote_host
+        $url->port,         $conf->{server_host},
+        $conf->{server_port}, $conf->{remote_host}
     );
     INFO "Executing $cmd";
-    my $proc = Proc::Background->new({die_upon_destroy=>1},$cmd);
+    my $proc = Proc::Background->new($cmd);
     sleep 1;
     $proc->alive or do {
         FATAL "Could not start $cmd, see $error_file";
         $error_file->unlink_on_destroy(0);
     };
-    INFO "ssh pid is ".$proc->pid;
-    $self->{proc} = $proc;
+    DEBUG "new ssh pid is ".$proc->pid;
+    open( my $fp, ">", $pidfile) or die $!;
+    print ${fp} $proc->pid;
+    close $fp;
+    $self->{ssh_proc} = $proc;
 }
 
 
