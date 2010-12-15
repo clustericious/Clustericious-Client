@@ -14,7 +14,7 @@ use warnings;
 
 our %Routes; # hash from class name to array ref of routes.
 our %Objects; # hash from class name to array ref of objects.
-our @CommonRoutes = ( [ "version" => '' ], [ "status" => '' ] );
+our @CommonRoutes = ( [ "version" => '' ], [ "status" => '' ], [ "api" => '' ] );
 
 =item add_route
 
