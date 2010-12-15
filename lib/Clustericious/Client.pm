@@ -416,7 +416,7 @@ sub _doit
         return undef;
     }
 
-    TRACE "Got response : ".$tx->res;
+    TRACE "Got response : ".$tx->res->to_string;
     return $tx->res->headers->content_type eq 'application/json'
            ? decode_json($tx->res->body)
            : $tx->res->body;
