@@ -36,9 +36,11 @@ sub _usage {
     my $routes = Clustericious::Client::Meta->routes(ref $client);
     my $objects = Clustericious::Client::Meta->objects(ref $client);
     print STDERR $msg,"\n" if $msg;
-    print STDERR <<EOPRINT;
-Usage:
+    print STDERR "Usage:\n";
+    print STDERR <<EOPRINT if $routes && @$routes;
 @{[ join "\n", map "       $0 [log options] $_->[0] $_->[1]", @$routes ]}
+EOPRINT
+    print STDERR <<EOPRINT if $objects && @$objects;
        $0 [log options] <object>
        $0 [log options] <object> <keys>
        $0 [log options] create <object> [<filename list>]

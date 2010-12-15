@@ -197,6 +197,7 @@ sub new
         );
     }
     if ($self->_config->ssh_tunnel(default => '')) {
+        INFO "Found an ssh tunnel for ".(ref $self)." in config file";
         $self->_start_ssh_tunnel;
     }
 
@@ -546,7 +547,6 @@ sub _start_ssh_tunnel {
     open( my $fp, ">", $pidfile) or die $!;
     print ${fp} $proc->pid;
     close $fp;
-    $self->{ssh_proc} = $proc;
 }
 
 
