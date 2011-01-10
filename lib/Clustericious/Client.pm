@@ -516,17 +516,27 @@ sub api {
     $self->_doit(GET => '/api');
 }
 
-sub _start_ssh_tunnel {
-    my $self = shift;
+sub _ssh_pidfile {
+    sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),shift->_appname);
+}
 
-    my $pidfile = sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),$self->_appname);
+sub ssh_tunnel_is_up {
+    my $pidfile = shift->_ssh_pidfile;
     if (-e $pidfile) {
         my ($pid) = IO::File->new("<$pidfile")->getlines;
         if (kill 0, $pid) {
             DEBUG "found running ssh ($pid)";
-            return;
+            return 1;
         }
     }
+    return 0;
+}
+
+sub _start_ssh_tunnel {
+    my $self = shift;
+
+    my $pidfile = $self->_ssh_pidfile;
+    return if $self->ssh_tunnel_is_up;
 
     my $conf = $self->_config->ssh_tunnel;
     my $error_file = File::Temp->new();
