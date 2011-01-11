@@ -399,7 +399,7 @@ sub _doit
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
 
-    $self->client->process($tx);
+    $self->client->start($tx);
 
     $self->res($tx->res);
 
