@@ -395,6 +395,7 @@ sub _doit
     $url->userinfo($self->userinfo) if $self->userinfo;
 
     DEBUG "Sending $method request to " ._sanitize_url($url);
+    $headers->{Connection} ||= 'Close';
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
