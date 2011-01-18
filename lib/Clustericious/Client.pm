@@ -381,6 +381,14 @@ sub _doit
             my $value = shift @args;
             $parameters->append($arg => $value);
         }
+        elsif ($method eq "GET" && $arg =~ s/^-//) {
+            # example: $client->esdt(-range => [1 => 100]);
+            my $value = shift @args;
+            if (ref $value eq 'ARRAY') {
+                $value = "items=$value->[0]-$value->[1]";
+            }
+            $headers->{$arg} = $value;
+        }
         elsif ($method eq "POST" && !ref $arg) {
             $body = $arg;
             $headers = shift @args if $args[0] && ref $args[0] eq 'HASH';
@@ -394,7 +402,7 @@ sub _doit
     $url->query($parameters);
     $url->userinfo($self->userinfo) if $self->userinfo;
 
-    DEBUG "Sending $method request to " ._sanitize_url($url);
+    DEBUG "Sending : $method " ._sanitize_url($url);
     $headers->{Connection} ||= 'Close';
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
