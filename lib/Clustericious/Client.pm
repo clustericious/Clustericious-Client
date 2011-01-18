@@ -255,8 +255,9 @@ sub errorstring
 Makes a method subname() that does the REST action.  Any scalar
 arguments are tacked onto the end of the url separated by a slash.
 If any argument begins with "--", it and its successor are treated
-as part of URL query string (for a GET request), or all arguments
-are treated as a hash reference (for a POST).  If you pass a hash
+as part of URL query string (for a GET request).  If any argument
+begins with a single "-", it and it successor are treated as HTTP
+headers to send (for a GET request).  If you pass a hash
 reference, the method changes to POST and the hash is encoded into
 the body as application/json.
 
@@ -266,7 +267,7 @@ A scalar reference as the final argument adds documentation
 about this route which will be displayed by the command-line
 client.
 
-=cut 
+=cut
 
 sub route
 {
