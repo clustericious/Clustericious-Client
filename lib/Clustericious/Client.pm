@@ -530,6 +530,12 @@ sub _ssh_pidfile {
     sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),shift->_appname);
 }
 
+=item ssh_tunnel_is_up
+
+Check to see if an ssh tunnel is alive for the current client.
+
+=cut
+
 sub ssh_tunnel_is_up {
     my $pidfile = shift->_ssh_pidfile;
     if (-e $pidfile) {
