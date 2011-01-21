@@ -59,7 +59,7 @@ Clustericious::Client - Constructor for clients of Clustericious apps
  $f->obj_delete('this', 27);               # DELETE /obj/this/27
 
  my $obj = $f->foo('this');                # GET /something/foo/this
- 
+
 =head1 DESCRIPTION
 
 Some very simple helper functions with a clean syntax to build a REST
@@ -158,7 +158,7 @@ This would automatically execute this
 
 in the background.
 
-=cut 
+=cut
 
 sub new
 {
@@ -282,7 +282,7 @@ sub route
     {
         eval "require $objclass";
 
-        *{caller() . "::$subname"} = 
+        *{caller() . "::$subname"} =
         sub
         {
             my $self = shift;
@@ -319,7 +319,7 @@ underscores, which are removed:
 If such a class isn't found, object will default to returning a
 L<Clustericious::Client::Object>.
 
-=cut 
+=cut
 
 sub object
 {
@@ -337,7 +337,7 @@ sub object
 
     Clustericious::Client::Meta->add_object(scalar caller(),$objname,$doc);
 
-    *{"${caller}::$objname"} = 
+    *{"${caller}::$objname"} =
     sub
     {
         my $self = shift;
@@ -345,8 +345,11 @@ sub object
         $objclass->new($data, $self);
     };
 
-    *{"${caller}::${objname}_delete"} = 
+    *{"${caller}::${objname}_delete"} =
         sub { shift->_doit(DELETE => $url, @_) };
+
+    *{"${caller}::${objname}_search"} =
+        sub { shift->_doit(POST => "$url/search", @_) };
 }
 
 sub _doit
@@ -436,7 +439,7 @@ sub _mycallback
 {
     my $self = shift;
     my $cb = shift;
-    sub 
+    sub
     {
         my ($client, $tx) = @_;
 
