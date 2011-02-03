@@ -84,7 +84,7 @@ use Clustericious::Client::Meta;
 use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
 use File::Temp;
-use Proc::Background;
+use Proc::Daemon;
 
 =head1 ATTRIBUTES
 
@@ -425,7 +425,8 @@ sub _doit
     unless ($tx->res->is_status_class(200)) {
         my $body = $tx->res->body || '';
         $body &&= " ($body)";
-        ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error.$body;
+        ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error;
+        TRACE "Error body : $body";
         return undef;
     }
 
@@ -559,23 +560,21 @@ sub _start_ssh_tunnel {
 
     my $conf = $self->_config->ssh_tunnel;
     my $error_file = File::Temp->new();
+    my $out_file = File::Temp->new();
     my $url = Mojo::URL->new($self->server_url);
-    my $cmd = sprintf(
-        "ssh -N -L%d:%s:%d %s 2>$error_file",
-        $url->port,         $conf->{server_host},
+    my $cmd = sprintf( "ssh -n -N -L%d:%s:%d %s",
+        $url->port,           $conf->{server_host},
         $conf->{server_port}, $conf->{remote_host}
     );
     INFO "Executing $cmd";
-    my $proc = Proc::Background->new($cmd);
-    sleep 1;
-    $proc->alive or do {
-        FATAL "Could not start $cmd, see $error_file";
+    my $proc = Proc::Daemon->new(exec_command => $cmd, pid_file => $pidfile, child_STDERR => $error_file, child_STDOUT => $out_file, work_dir => "/tmp");
+    my $pid = $proc->Init or do {
+        FATAL "Could not start $cmd, see $error_file or $out_file";
         $error_file->unlink_on_destroy(0);
+        $out_file->unlink_on_destroy(0);
     };
-    DEBUG "new ssh pid is ".$proc->pid;
-    open( my $fp, ">", $pidfile) or die $!;
-    print ${fp} $proc->pid;
-    close $fp;
+    sleep 1;
+    DEBUG "new ssh pid is $pid";
 }
 
 
