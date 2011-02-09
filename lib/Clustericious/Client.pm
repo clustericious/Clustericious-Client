@@ -544,7 +544,7 @@ sub ssh_tunnel_is_up {
     my $pidfile = shift->_ssh_pidfile;
     if (-e $pidfile) {
         my ($pid) = IO::File->new("<$pidfile")->getlines;
-        if (kill 0, $pid) {
+        if ($pid and kill 0, $pid) {
             DEBUG "found running ssh ($pid)";
             return 1;
         }
@@ -552,22 +552,34 @@ sub ssh_tunnel_is_up {
     return 0;
 }
 
-sub _start_ssh_tunnel {
+sub _ssh_cmd {
     my $self = shift;
-
-    my $pidfile = $self->_ssh_pidfile;
-    return if $self->ssh_tunnel_is_up;
-
     my $conf = $self->_config->ssh_tunnel;
-    my $error_file = File::Temp->new();
-    my $out_file = File::Temp->new();
     my $url = Mojo::URL->new($self->server_url);
     my $cmd = sprintf( "ssh -n -N -L%d:%s:%d %s",
         $url->port,           $conf->{server_host},
         $conf->{server_port}, $conf->{remote_host}
     );
+    return $cmd;
+}
+
+sub _start_ssh_tunnel {
+    my $self = shift;
+
+    return if $self->ssh_tunnel_is_up;
+
+    my $error_file = File::Temp->new();
+    my $out_file = File::Temp->new();
+
+    my $cmd = $self->_ssh_cmd;
     INFO "Executing $cmd";
-    my $proc = Proc::Daemon->new(exec_command => $cmd, pid_file => $pidfile, child_STDERR => $error_file, child_STDOUT => $out_file, work_dir => "/tmp");
+    my $proc = Proc::Daemon->new(
+        exec_command => $cmd,
+        pid_file     => $self->_ssh_pidfile,
+        child_STDERR => $error_file,
+        child_STDOUT => $out_file,
+        work_dir     => "/tmp"
+    );
     my $pid = $proc->Init or do {
         FATAL "Could not start $cmd, see $error_file or $out_file";
         $error_file->unlink_on_destroy(0);
@@ -577,5 +589,20 @@ sub _start_ssh_tunnel {
     DEBUG "new ssh pid is $pid";
 }
 
+sub stop_ssh_tunnel {
+    my $self = shift;
+    my $proc = Proc::Daemon->new( pid_file => $self->_ssh_pidfile);
+    WARN "pid file is ".$self->_ssh_pidfile;
+    my $pid = $proc->Status($self->_ssh_pidfile) or do {
+        INFO "Could not stop ssh tunnel for ".(ref $self);
+        return;
+    };
+    my $killed = $proc->Kill_Daemon($self->_ssh_pidfile) or do {
+        WARN "Could not kill ssh for ".(ref $self);
+        return;
+    };
+    DEBUG "Killed ssh for ".(ref $self)." ($killed)";
+    return 1;
+}
 
 1;
