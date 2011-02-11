@@ -369,7 +369,7 @@ sub _doit
     }
 
     my $parameters = Mojo::Parameters->new();
-    while (my $arg = shift @args)
+    while (defined(my $arg = shift @args))
     {
         if (ref $arg eq 'HASH')
         {
