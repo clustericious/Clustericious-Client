@@ -589,6 +589,12 @@ sub _start_ssh_tunnel {
     DEBUG "new ssh pid is $pid";
 }
 
+=item stop_ssh_tunnel
+
+Stop any running ssh tunnel for this client.
+
+=cut
+
 sub stop_ssh_tunnel {
     my $self = shift;
     my $proc = Proc::Daemon->new( pid_file => $self->_ssh_pidfile);
