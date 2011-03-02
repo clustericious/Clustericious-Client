@@ -17,5 +17,6 @@ my $build = Module::Build->new(
         'JSON::XS'      => 0,
         'Proc::Daemon' => 0,
         'File::Temp' => 0,
+        'DateTime::Format::ISO8601' => 0,
     }
 )->create_build_script;
