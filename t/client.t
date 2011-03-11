@@ -3,7 +3,13 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+my $ok;
+BEGIN {
+   eval "use Clustericious::App";
+   $ok = 1 unless $@;
+}
+
+use Test::More $ok ? (tests => 3) : ( skip_all => "No Clustericious::App" );
 
 Log::Log4perl->easy_init(level => "WARN");
 
