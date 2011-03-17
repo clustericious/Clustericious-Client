@@ -74,7 +74,7 @@ a data structure if it is application/json.
 
 use base 'Mojo::Base';
 
-use Mojo::Client;
+use Mojo::UserAgent;
 use Mojo::ByteStream qw/b/;
 use Mojo::Parameters;
 use JSON::XS;
@@ -94,10 +94,7 @@ that class.  The following additional attributes are used.
 =head2 C<client>
 
 A client to process the HTTP stuff with.  Defaults to a
-L<Mojo::Client>.
-
-You can use the L<Mojo::Client> asynchronous stuff with callbacks and
-$f->client->async and $f->client->process.
+L<Mojo::UserAgent>.
 
 =head2 C<app>
 
@@ -166,14 +163,14 @@ sub new
 
     if ($self->{app})
     {
-        my $client = Mojo::Client->new(app => $self->{app})
+        my $client = Mojo::UserAgent->new(app => $self->{app})
             or return undef;
 
         $self->client($client);
     }
     else
     {
-        $self->client(Mojo::Client->new);
+        $self->client(Mojo::UserAgent->new);
         if (not length $self->server_url)
         {
             $self->server_url($self->_config->url);
