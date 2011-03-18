@@ -180,7 +180,7 @@ sub AUTOLOAD
              : $value;
     };
 
-    $self->$called;
+    $self->$called(@_);
 }
 
 1;
