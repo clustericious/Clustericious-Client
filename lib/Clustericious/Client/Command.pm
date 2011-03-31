@@ -43,6 +43,7 @@ EOPRINT
     print STDERR <<EOPRINT if $objects && @$objects;
        $0 [log options] <object>
        $0 [log options] <object> <keys>
+       $0 [log options] search <object> [--key value]
        $0 [log options] create <object> [<filename list>]
        $0 [log options] update <object> <keys> [<filename>]
        $0 [log options] delete <object> <keys>
@@ -137,6 +138,22 @@ sub run
         $client->$method(@_) or ERROR $client->errorstring;
         return;
     }
+
+    if ($method eq 'search')
+    {
+        $method = shift @_;
+
+        $class->_usage($client,"Missing <object>") unless $method;
+
+        $method .= '_search';
+
+        INFO "calling $method";
+        my $ret = $client->$method(@_) or ERROR $client->errorstring;
+        print Dump($ret);
+
+        return;
+    }
+
 
     if ($client->can($method))
     {
