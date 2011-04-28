@@ -23,6 +23,7 @@ Still needs lots of work..
 use strict;
 use warnings;
 
+use File::Basename qw/basename/;
 use YAML::XS qw(Load Dump LoadFile);
 use Log::Log4perl qw/:easy/;
 use Data::Dumper;
@@ -37,16 +38,17 @@ sub _usage {
     my $objects = Clustericious::Client::Meta->objects(ref $client);
     print STDERR $msg,"\n" if $msg;
     print STDERR "Usage:\n";
+    my $name = basename($0);
     print STDERR <<EOPRINT if $routes && @$routes;
-@{[ join "\n", map "       $0 [log options] $_->[0] $_->[1]", @$routes ]}
+@{[ join "\n", map "       $name [log options] $_->[0] $_->[1]", @$routes ]}
 EOPRINT
     print STDERR <<EOPRINT if $objects && @$objects;
-       $0 [log options] <object>
-       $0 [log options] <object> <keys>
-       $0 [log options] search <object> [--key value]
-       $0 [log options] create <object> [<filename list>]
-       $0 [log options] update <object> <keys> [<filename>]
-       $0 [log options] delete <object> <keys>
+       $name [log options] <object>
+       $name [log options] <object> <keys>
+       $name [log options] search <object> [--key value]
+       $name [log options] create <object> [<filename list>]
+       $name [log options] update <object> <keys> [<filename>]
+       $name [log options] delete <object> <keys>
 
     where "log options" are as described in Log::Log4perl::CommandLine.
 
