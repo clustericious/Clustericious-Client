@@ -164,7 +164,7 @@ sub run
         {
             if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
                 if ( my $res = $obj->success ) {
-                    print $res->code," ",$res->body,"\n";
+                    print $res->code," ",$res->default_message,"\n";
                 }
                 else {
                     my ( $message, $code ) = $obj->error;
