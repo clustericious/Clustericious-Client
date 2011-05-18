@@ -161,7 +161,22 @@ sub run
     {
         if (my $obj = $client->$method(@_))
         {
-            print Dump($obj);
+            if ( $obj->isa("Mojo::Transaction") ) {
+                if ( my $res = $obj->success ) {
+                    print $res->code," ",$res->body,"\n";
+                }
+                else {
+                    my ( $message, $code ) = $obj->error;
+                    if ($code) {
+                        print "$code $message response.\n";
+                    }
+                    else {
+                        print "Connection error: $message\n";
+                    }
+                }
+            } else {
+                print Dump($obj);
+            }
         }
         else
         {
