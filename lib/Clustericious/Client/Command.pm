@@ -26,6 +26,7 @@ use warnings;
 use File::Basename qw/basename/;
 use YAML::XS qw(Load Dump LoadFile);
 use Log::Log4perl qw/:easy/;
+use Scalar::Util qw/blessed/;
 use Data::Dumper;
 
 use Clustericious::Client::Meta;
@@ -161,7 +162,7 @@ sub run
     {
         if (my $obj = $client->$method(@_))
         {
-            if ( $obj->isa("Mojo::Transaction") ) {
+            if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
                 if ( my $res = $obj->success ) {
                     print $res->code," ",$res->body,"\n";
                 }
