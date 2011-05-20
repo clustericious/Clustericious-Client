@@ -160,6 +160,12 @@ sub run
 
     if ($client->can($method))
     {
+        if ( -r $_[-1] ) {
+            my $filename = pop @_;
+            my $content = LoadFile($filename)
+                or LOGDIE "Invalid YAML: $filename\n";
+            push @_, $content;
+        }
         if (my $obj = $client->$method(@_))
         {
             if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
