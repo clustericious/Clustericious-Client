@@ -97,7 +97,7 @@ sub run
         }
         else
         {
-            my $content = Load(join('', <>))
+            my $content = Load(join('', <STDIN>))
                 or LOGDIE "Invalid YAML content\n";
 
             $client->$method($content) or ERROR $client->errorstring;
