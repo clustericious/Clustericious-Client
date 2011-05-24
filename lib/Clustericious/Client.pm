@@ -184,7 +184,7 @@ sub new
         my $elapsed;
         my $started;
         $self->client->ioloop->timer( 2 => sub { $elapsed = 2; $started = time; } );
-        $self->client->ioloop->on_tick(
+        $self->client->ioloop->recurring(
             sub {
                 return unless $started;
                 return if $elapsed >= time - $started;
