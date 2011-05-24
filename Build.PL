@@ -18,5 +18,6 @@ my $build = Module::Build->new(
           'Proc::Daemon'               => '0.05',
           'File::Temp'                 => 0,
           'DateTime::Format::ISO8601'  => 0,
-    }
+    },
+    add_to_cleanup      => [ 'Clustericious-Client*' ],
 )->create_build_script;
