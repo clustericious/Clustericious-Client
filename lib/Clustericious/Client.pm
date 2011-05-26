@@ -233,6 +233,7 @@ parts)
 sub errorstring
 {
     my $self = shift;
+    return if $self->res->code==200;
     $self->res->error
       || sprintf( "(%d) %s", $self->res->code, $self->res->message );
 }

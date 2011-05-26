@@ -187,7 +187,7 @@ sub run
         }
         else
         {
-            ERROR $client->errorstring;
+            ERROR $client->errorstring if $client->errorstring;
         }
         return;
     }
