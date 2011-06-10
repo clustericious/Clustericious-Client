@@ -425,8 +425,8 @@ sub _doit
         $body &&= " ($body)";
         ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error;
         my $brief = $body;
-        $brief =~ s/\n/ /g;
-        ERROR "Error body : ".substr($brief,0,100);
+        $brief =~ s/\n/ /g if $brief;
+        ERROR substr($brief,0,200) if $brief;
         TRACE "Full error body : $body";
         return undef;
     }
