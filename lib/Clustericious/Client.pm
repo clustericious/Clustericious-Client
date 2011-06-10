@@ -424,7 +424,10 @@ sub _doit
         my $body = $tx->res->body || '';
         $body &&= " ($body)";
         ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error;
-        TRACE "Error body : $body";
+        my $brief = $body;
+        $brief =~ s/\n/ /g;
+        ERROR "Error body : ".substr($brief,0,100);
+        TRACE "Full error body : $body";
         return undef;
     }
 
