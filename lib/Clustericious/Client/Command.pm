@@ -125,7 +125,7 @@ sub run
         }
         my $ret = $client->$method(@_, $content)
             or ERROR $client->errorstring;
-        print prettyDump($ret);
+        print _prettyDump($ret);
         return;
     }
 
@@ -152,7 +152,7 @@ sub run
 
         INFO "calling $method";
         my $ret = $client->$method(@_) or ERROR $client->errorstring;
-        print prettyDump($ret);
+        print _prettyDump($ret);
 
         return;
     }
@@ -182,7 +182,7 @@ sub run
                     }
                 }
             } else {
-                print prettyDump($obj);
+                print _prettyDump($obj);
             }
         }
         else
@@ -196,7 +196,7 @@ sub run
     $class->_usage($client, "Unrecognized arguments");
 }
 
-sub prettyDump {
+sub _prettyDump {
     my $what = shift;
     rmap_ref { $_ = $_->iso8601() if ref($_) eq 'DateTime' } $what;
     return Dump($what);

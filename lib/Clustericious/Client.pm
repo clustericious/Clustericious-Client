@@ -163,7 +163,9 @@ sub new
 
     if ($self->{app})
     {
-        my $client = Mojo::UserAgent->new(app => $self->{app})
+        my $app = $self->{app};
+        $app = $app->new() unless ref($app);
+        my $client = Mojo::UserAgent->new(app => $app)
             or return undef;
 
         $self->client($client);
