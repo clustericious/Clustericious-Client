@@ -27,7 +27,7 @@ use File::Basename qw/basename/;
 use YAML::XS qw(Load Dump LoadFile);
 use Log::Log4perl qw/:easy/;
 use Scalar::Util qw/blessed/;
-use Data::Dumper;
+use Data::Rmap qw/rmap_ref/;
 
 use Clustericious::Client::Meta;
 
@@ -125,7 +125,7 @@ sub run
         }
         my $ret = $client->$method(@_, $content)
             or ERROR $client->errorstring;
-        print Dump($ret);
+        print prettyDump($ret);
         return;
     }
 
@@ -152,7 +152,7 @@ sub run
 
         INFO "calling $method";
         my $ret = $client->$method(@_) or ERROR $client->errorstring;
-        print Dump($ret);
+        print prettyDump($ret);
 
         return;
     }
@@ -182,7 +182,7 @@ sub run
                     }
                 }
             } else {
-                print Dump($obj);
+                print prettyDump($obj);
             }
         }
         else
@@ -195,5 +195,12 @@ sub run
     $class->_usage($client) if $ARGV[0] =~ /help/;
     $class->_usage($client, "Unrecognized arguments");
 }
+
+sub prettyDump {
+    my $what = shift;
+    rmap_ref { $_ = $_->iso8601() if ref($_) eq 'DateTime' } $what;
+    return Dump($what);
+}
+
 
 1;
