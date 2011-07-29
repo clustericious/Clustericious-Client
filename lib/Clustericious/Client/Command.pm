@@ -160,8 +160,9 @@ sub run
 
     if ($client->can($method))
     {
-        if ( $method eq 'POST' && $_[-1] && -r $_[-1] ) {
+        if ( $_[-1] && $_[-1] =~ /\.(ya?ml|txt)$/ && -r $_[-1] ) {
             my $filename = pop @_;
+            INFO "Reading file $filename";
             my $content = LoadFile($filename)
                 or LOGDIE "Invalid YAML: $filename\n";
             push @_, $content;
