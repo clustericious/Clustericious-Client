@@ -195,7 +195,7 @@ sub new
             }
         );
     }
-    if ($self->_config->ssh_tunnel(default => '')) {
+    if (!$self->server_url && $self->_config->ssh_tunnel(default => '')) {
         INFO "Found an ssh tunnel for ".(ref $self)." in config file";
         $self->_start_ssh_tunnel;
     }
