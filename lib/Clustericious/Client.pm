@@ -357,7 +357,7 @@ sub _doit
     my $self = shift;
     my ($method, $url, @args) = @_;
 
-    $url = $self->server_url . $url if $self->server_url;
+    $url = $self->server_url . $url if $self->server_url && $url !~ /^http/;
 
     my $cb;
     my $body = '';
