@@ -412,8 +412,7 @@ sub _doit
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
 
-    $self->client->start($tx);
-
+    $tx = $self->client->start($tx);
     $self->res($tx->res);
 
     if (($tx->res->code||0) == 401 && !$url->userinfo && $self->_has_auth) {
@@ -425,7 +424,10 @@ sub _doit
     unless ($tx->res->is_status_class(200)) {
         my $body = $tx->res->body || '';
         $body &&= " ($body)";
-        ERROR "Error trying to $method "._sanitize_url($url)." : ".$tx->error;
+        my ($msg,$code) = $tx->error;
+        $code &&= "$code ";
+        ERROR "got code ".$tx->res->code if defined($tx->res->code);
+        ERROR "Error trying to $method "._sanitize_url($url)." : ".($code || '').($msg || 'connection error');
         my $brief = $body;
         $brief =~ s/\n/ /g if $brief;
         ERROR substr($brief,0,200) if $brief;
