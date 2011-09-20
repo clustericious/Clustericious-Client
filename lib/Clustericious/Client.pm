@@ -160,6 +160,7 @@ in the background.
 sub new
 {
     my $self = shift->SUPER::new(@_);
+    my %args = @_;
 
     if ($self->{app})
     {
@@ -195,7 +196,7 @@ sub new
             }
         );
     }
-    if (!$self->server_url && $self->_config->ssh_tunnel(default => '')) {
+    if (!$args{server_url} && $self->_config->ssh_tunnel(default => '')) {
         INFO "Found an ssh tunnel for ".(ref $self)." in config file";
         $self->_start_ssh_tunnel;
     }
