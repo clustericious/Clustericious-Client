@@ -427,12 +427,15 @@ sub _doit
         $body &&= " ($body)";
         my ($msg,$code) = $tx->error;
         $code &&= "$code ";
-        ERROR "got code ".$tx->res->code if defined($tx->res->code);
-        ERROR "Error trying to $method "._sanitize_url($url)." : ".($code || '').($msg || 'connection error');
         my $brief = $body;
         $brief =~ s/\n/ /g if $brief;
-        ERROR substr($brief,0,200) if $brief;
-        TRACE "Full error body : $body";
+        if ($code && $code==404) {
+            TRACE "$method $url : $code".$tx->res->message unless $ENV{ACPS_SUPPRESS_404} && $url =~ /$ENV{ACPS_SUPPRESS_404}/;
+        } else {
+            ERROR "Error trying to $method "._sanitize_url($url)." : ".($code || '').($msg || 'connection error');
+            ERROR substr($brief,0,200) if $brief;
+            TRACE "Full error body : $body";
+        }
         return undef;
     }
 
@@ -616,5 +619,13 @@ sub stop_ssh_tunnel {
     DEBUG "Killed ssh for ".(ref $self)." ($killed)";
     return 1;
 }
+
+=head1 ENVIRONMENT
+
+Set ACPS_SUPPRESS_404 to a regular expression in order to
+not print messages when a 404 response is returned from urls
+matching that regex.
+
+=cut
 
 1;
