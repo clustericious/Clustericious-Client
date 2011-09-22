@@ -283,7 +283,7 @@ sub route
     {
         eval "require $objclass";
         if ($@) {
-            LOGDIE "Error loading $objclass : $@";
+            LOGDIE "Error loading $objclass : $@" unless $@ =~ /Can't locate/i;
         }
 
         *{caller() . "::$subname"} =
@@ -337,7 +337,7 @@ sub object
 
     eval "require $objclass";
     if ($@) {
-        LOGDIE "Error loading $objclass : $@";
+        LOGDIE "Error loading $objclass : $@" unless $@ =~ /Can't locate/i;
     }
 
     $objclass = 'Clustericious::Client::Object' unless $objclass->can('new');
