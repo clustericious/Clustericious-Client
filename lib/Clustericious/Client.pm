@@ -282,6 +282,9 @@ sub route
     if ($objclass)
     {
         eval "require $objclass";
+        if ($@) {
+            LOGDIE "Error loading $objclass : $@";
+        }
 
         *{caller() . "::$subname"} =
         sub
@@ -333,6 +336,9 @@ sub object
         join('', map { ucfirst } split('_', $objname)); # foo_bar => FooBar
 
     eval "require $objclass";
+    if ($@) {
+        LOGDIE "Error loading $objclass : $@";
+    }
 
     $objclass = 'Clustericious::Client::Object' unless $objclass->can('new');
 
