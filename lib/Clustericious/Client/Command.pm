@@ -182,6 +182,8 @@ sub run
                         print "Connection error: $message\n";
                     }
                 }
+            } elsif (ref $obj eq 'HASH' && keys %$obj == 1 && $obj->{text}) {
+                print $obj->{text};
             } else {
                 print _prettyDump($obj);
             }

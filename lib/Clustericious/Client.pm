@@ -545,6 +545,18 @@ sub api {
     $self->_doit(GET => '/api');
 }
 
+=item logtail
+
+Get the last N lines of the server log file.
+
+=cut
+
+sub logtail {
+    my $self = shift;
+    my $got = $self->_doit(GET => '/log', @_);
+    return { text => $got };
+}
+
 sub _ssh_pidfile {
     sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),shift->_appname);
 }
