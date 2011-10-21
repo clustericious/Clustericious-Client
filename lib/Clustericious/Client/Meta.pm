@@ -13,6 +13,7 @@ use strict;
 use warnings;
 
 our %Routes; # hash from class name to array ref of routes.
+our %RouteAttributes; # hash from class name to hash ref of attributes.
 our %Objects; # hash from class name to array ref of objects.
 our @CommonRoutes = ( [ "version" => '' ], [ "status" => '' ], [ "api" => '' ], [ "logtail" => '' ] );
 
@@ -33,6 +34,45 @@ sub add_route { # Keep track of routes that have are added.
     my $route_name = shift;         # same as $subname
     my $route_doc  = shift || '';
     push @{ $Routes{$for} }, [ $route_name => $route_doc ];
+}
+
+=item add_route_attribute
+
+Add an attribute for a route.
+
+Parameters :
+
+    - the name of the attribute
+    - the value of the attribute.
+
+Recognized attributes :
+
+    - dont_read_files : if set, no attempt will be made to treat
+        arguments as yaml files
+
+=cut
+
+sub add_route_attribute {
+    my $class      = shift;
+    my $for        = shift;         # e.g. Restmd::Client
+    my $route_name = shift;
+    my $attr_name  = shift;
+    my $attr_value = shift;
+    $RouteAttributes{$for}->{$route_name}{$attr_name} = $attr_value;
+}
+
+=item get_route_attrribute
+
+Like the above but retrieve an attribute.
+
+=cut
+
+sub get_route_attrribute {
+    my $class      = shift;
+    my $for        = shift;         # e.g. Restmd::Client
+    my $route_name = shift;
+    my $attr_name  = shift;
+    return $RouteAttributes{$for}->{$route_name}{$attr_name};
 }
 
 =item add_object
