@@ -41,17 +41,19 @@ sub _usage {
     print STDERR "Usage:\n";
     my $name = basename($0);
     print STDERR <<EOPRINT if $routes && @$routes;
-@{[ join "\n", map "       $name [log options] $_->[0] $_->[1]", @$routes ]}
+@{[ join "\n", map "       $name [opts] $_->[0] $_->[1]", @$routes ]}
 EOPRINT
     print STDERR <<EOPRINT if $objects && @$objects;
-       $name [log options] <object>
-       $name [log options] <object> <keys>
-       $name [log options] search <object> [--key value]
-       $name [log options] create <object> [<filename list>]
-       $name [log options] update <object> <keys> [<filename>]
-       $name [log options] delete <object> <keys>
+       $name [opts] <object>
+       $name [opts] <object> <keys>
+       $name [opts] search <object> [--key value]
+       $name [opts] create <object> [<filename list>]
+       $name [opts] update <object> <keys> [<filename>]
+       $name [opts] delete <object> <keys>
 
-    where "log options" are as described in Log::Log4perl::CommandLine.
+    where "opts" are as described in Log::Log4perl::CommandLine, or
+    may be "--remote <remote>" to specify a remote to use from the
+    config file (see Clustericious::Client).
 
     and "<object>" may be one of the following :
 @{[ join "\n", map "      $_->[0] $_->[1]", @$objects ]}
@@ -74,7 +76,21 @@ sub run
     my $class = shift;
     my $client = shift;
 
-    my $method = shift @_;
+    my $arg;
+    ARG :
+    while ($arg = shift @_) {
+        for ($arg) {
+            /--remote/ and do {
+                my $remote = shift;
+                TRACE "Using remote $remote";
+                $client->remote($remote);
+                next ARG;
+            };
+            last ARG;
+        }
+    }
+
+    my $method = $arg;
 
     $class->_usage($client) unless $method;
 

@@ -72,7 +72,7 @@ a data structure if it is application/json.
 
 =cut
 
-use base 'Mojo::Base';
+use Mojo::Base qw/-base/;
 
 use Mojo::UserAgent;
 use Mojo::ByteStream qw/b/;
@@ -114,18 +114,22 @@ res->code and res->message are the returned HTTP code and message.
 
 =cut
 
-__PACKAGE__->attr(server_url => '');
-__PACKAGE__->attr([qw(res userinfo client)]);
+has server_url => '';
+has [qw(res userinfo client)];
+has _remote => ''; # Access via remote()
 
 sub import
 {
     my $class = shift;
     my $caller = caller;
 
+    {
+    no strict 'refs';
     push @{"${caller}::ISA"}, $class unless $caller->isa($class);
     *{"${caller}::route"} = \&route;
     *{"${caller}::object"} = \&object;
     *{"${caller}::import"} = sub {};
+    }
 }
 
 =head1 METHODS
@@ -202,6 +206,34 @@ sub new
     }
 
     return $self;
+}
+
+=head2 remote
+
+Tell the client to use the remote information in the configuration.
+For instance, if the config has
+
+ remotes :
+    test :
+        url: http://foo
+    bar :
+        url: http://baz
+        username : one
+        password : two
+
+Then setting remote("test") uses the first
+url, and setting remote("bar") uses the
+second one.
+
+=cut
+
+sub remote {
+    my $self = shift;
+    my $remote = shift or LOGDIE "missing remote";
+    my $info = $self->_config->remotes->$remote;
+    TRACE "Using remote url : ".$info->{url};
+    $self->server_url($info->{url});
+    $self->_remote($remote);
 }
 
 =head2 C<login>
@@ -295,6 +327,7 @@ sub route
     }
     else
     {
+        no strict 'refs';
         *{caller() . "::$subname"} = sub { shift->_doit($method,$url,@_); };
     }
 
@@ -344,6 +377,7 @@ sub object
 
     Clustericious::Client::Meta->add_object(scalar caller(),$objname,$doc);
 
+    no strict 'refs';
     *{"${caller}::$objname"} =
     sub
     {
@@ -493,7 +527,11 @@ sub _appname {
 
 sub _config {
     my $self = shift;
-    return Clustericious::Config->new($self->_appname);
+    my $conf = Clustericious::Config->new($self->_appname);
+    if (my $remote = $self->_remote) {
+        return $conf->remotes->$remote;
+    }
+    return $conf;
 }
 
 sub _has_auth {
