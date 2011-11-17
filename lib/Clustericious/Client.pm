@@ -318,6 +318,7 @@ sub route
             LOGDIE "Error loading $objclass : $@" unless $@ =~ /Can't locate/i;
         }
 
+        no strict 'refs';
         *{caller() . "::$subname"} =
         sub
         {
