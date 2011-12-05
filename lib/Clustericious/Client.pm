@@ -242,6 +242,7 @@ Log in to the server.  This will send basic auth info
 along with every subsequent request.
 
     $f->login; # looks for username and password in $app.conf
+    $f->login("elmer", "fudd");
     $f->login(username => "elmer", password => "fudd");
 
 =cut
@@ -250,8 +251,9 @@ sub login {
     my $self = shift;
     my %args = @_;
     my ($user,$pw) =
-        @_ ?  @args{qw/username password/}
-           :  map $self->_config->$_, qw/username password/;
+           @_==2 ? @_
+         : @_    ?  @args{qw/username password/}
+         : map $self->_config->$_, qw/username password/;
     $self->userinfo(join ':', $user,$pw);
 }
 
@@ -457,9 +459,11 @@ sub _doit
     $tx = $self->client->start($tx);
     $self->res($tx->res);
 
-    if (($tx->res->code||0) == 401 && !$url->userinfo && $self->_has_auth) {
+    if (($tx->res->code||0) == 401 && !$url->userinfo && ($self->_has_auth || $self->_can_auth)) {
         DEBUG "received code 401, trying again with credentials";
-        $self->login;
+        my ($realm) = $tx->res->headers->www_authenticate =~ /realm=(.*)$/i;
+        my $host = $url->host;
+        $self->login( $self->_has_auth ? () : $self->_get_user_pw($host,$realm) );
         return $self->_doit(@_);
     }
 
@@ -540,6 +544,24 @@ sub _has_auth {
     return 0 unless $self->_config->username(default => '');
     return 0 unless $self->_config->password(default => '');
     return 1;
+}
+
+sub _can_auth {
+    my $self = shift;
+    return -t STDIN ? 1 : 0;
+}
+
+sub _get_user_pw  {
+    my $self = shift;
+    my $host = shift;
+    my $realm = shift;
+    print "Username for $realm at $host : ";
+    chomp (my $user = <STDIN>);
+    print "Password for $realm at $host : ";
+    system("stty -echo");
+    chomp (my $pw = <STDIN>);
+    system("stty echo");
+    return ($user,$pw);
 }
 
 =head1 COMMON ROUTES
