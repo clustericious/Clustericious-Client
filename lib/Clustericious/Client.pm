@@ -85,6 +85,7 @@ use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
 use File::Temp;
 use Proc::Daemon;
+use IO::Prompt qw/prompt/;
 
 =head1 ATTRIBUTES
 
@@ -555,12 +556,8 @@ sub _get_user_pw  {
     my $self = shift;
     my $host = shift;
     my $realm = shift;
-    print "Username for $realm at $host : ";
-    chomp (my $user = <STDIN>);
-    print "Password for $realm at $host : ";
-    system("stty -echo");
-    chomp (my $pw = <STDIN>);
-    system("stty echo");
+    my $user = prompt "Username for $realm at $host : ";
+    my $pw = prompt "Password : ",{-echo=>'*'};
     return ($user,$pw);
 }
 

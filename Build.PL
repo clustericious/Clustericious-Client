@@ -19,6 +19,7 @@ my $build = Module::Build->new(
           'File::Temp'                 => 0,
           'DateTime::Format::ISO8601'  => 0,
           'Data::Rmap'                 => 0,
+          'IO::Prompt'                 => 0,
     },
     add_to_cleanup      => [ 'Clustericious-Client*' ],
 )->create_build_script;
