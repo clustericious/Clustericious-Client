@@ -185,22 +185,7 @@ sub new
         }
     }
 
-    $self->client->keep_alive_timeout($ENV{CLUSTERICIOUS_KEEP_ALIVE_TIMEOUT} || 300);
-    my $logger = MojoX::Log::Log4perl->new;
-    $self->client->log($logger);
-    if ( $logger->is_trace ) {
-        my $elapsed;
-        my $started;
-        $self->client->ioloop->timer( 2 => sub { $elapsed = 2; $started = time; } );
-        $self->client->ioloop->recurring(
-            sub {
-                return unless $started;
-                return if $elapsed >= time - $started;
-                $elapsed = time - $started;
-                $logger->trace("waiting $elapsed");
-            }
-        );
-    }
+    $self->client->inactivity_timeout($ENV{CLUSTERICIOUS_KEEP_ALIVE_TIMEOUT} || 300);
     if (!$args{server_url} && $self->_config->ssh_tunnel(default => '')) {
         INFO "Found an ssh tunnel for ".(ref $self)." in config file";
         $self->_start_ssh_tunnel;
