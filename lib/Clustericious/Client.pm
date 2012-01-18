@@ -85,7 +85,6 @@ use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
 use File::Temp;
 use Proc::Daemon;
-use IO::Prompt qw/prompt/;
 
 =head1 ATTRIBUTES
 
@@ -541,8 +540,10 @@ sub _get_user_pw  {
     my $self = shift;
     my $host = shift;
     my $realm = shift;
-    my $user = prompt "Username for $realm at $host : ";
-    my $pw = prompt "Password : ",{-echo=>'*'};
+    # "use"ing causes too many warnings; load on demand.
+    require IO::Prompt;
+    my $user = IO::Prompt::prompt("Username for $realm at $host : ");
+    my $pw = IO::Prompt::prompt("Password : ",{-echo=>'*'});
     return ($user,$pw);
 }
 
