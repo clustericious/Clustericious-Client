@@ -432,6 +432,9 @@ sub _doit
         }
     }
     $url = Mojo::URL->new($url) unless ref $url;
+    $url = $url->to_abs unless $url->is_abs;
+    WARN "url $url is not absolute" unless $url =~ /^http/i;
+
     $url->query($parameters);
     $url->userinfo($self->userinfo) if $self->userinfo;
 
