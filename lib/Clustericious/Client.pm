@@ -214,11 +214,29 @@ second one.
 
 sub remote {
     my $self = shift;
-    my $remote = shift or LOGDIE "missing remote";
+    return $self->_remote unless @_ > 0;
+    my $remote = shift;
+    unless ($remote) { # reset to default
+        $self->{_remote} = '';
+        $self->server_url($self->_config->url);
+        return;
+    }
     my $info = $self->_config->remotes->$remote;
     TRACE "Using remote url : ".$info->{url};
     $self->server_url($info->{url});
     $self->_remote($remote);
+}
+
+=head2 remotes
+
+Return a list of available remotes.
+
+=cut
+
+sub remotes {
+    my $self = shift;
+    my %found = $self->_config->remotes(default => {});
+    return keys %found;
 }
 
 =head2 C<login>
