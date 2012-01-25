@@ -405,6 +405,7 @@ sub _doit
     my ($method, $url, @args) = @_;
 
     $url = $self->server_url . $url if $self->server_url && $url !~ /^http/;
+    return undef if $self->server_url eq 'http://0.0.0.0';
 
     my $cb;
     my $body = '';
