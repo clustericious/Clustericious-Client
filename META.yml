@@ -35,4 +35,4 @@ requires:
   MojoX::Log::Log4perl: 0
   Mojolicious: 1.65
   Proc::Daemon: 0.05
-version: 0.44
+version: 0.45
