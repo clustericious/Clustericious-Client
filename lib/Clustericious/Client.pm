@@ -236,7 +236,7 @@ Return a list of available remotes.
 
 sub remotes {
     my $self = shift;
-    my %found = $self->_config->remotes(default => {});
+    my %found = $self->_base_config->remotes(default => {});
     return keys %found;
 }
 
@@ -545,6 +545,11 @@ sub _config {
         return $conf->remotes->$remote;
     }
     return $conf;
+}
+
+sub _base_config {
+    # Independent of remotes
+    return Clustericious::Config->new(shift->_appname);
 }
 
 sub _has_auth {
