@@ -221,7 +221,7 @@ sub remote {
         $self->server_url($self->_config->url);
         return;
     }
-    my $info = $self->_config->remotes->$remote;
+    my $info = $self->_base_config->remotes->$remote;
     TRACE "Using remote url : ".$info->{url};
     $self->server_url($info->{url});
     $self->userinfo('');
