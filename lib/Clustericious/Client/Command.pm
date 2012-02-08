@@ -176,7 +176,7 @@ sub run
 
     if ($client->can($method))
     {
-        if ( !Clustericious::Client::Meta->get_route_attrribute(ref $client,$method,'dont_read_files')
+        if ( !Clustericious::Client::Meta->get_route_attribute(ref $client,$method,'dont_read_files')
             && $_[-1] && $_[-1] =~ /\.(ya?ml|txt)$/ && -r $_[-1] ) {
             my $filename = pop @_;
             INFO "Reading file $filename";

@@ -48,7 +48,10 @@ Parameters :
 Recognized attributes :
 
     - dont_read_files : if set, no attempt will be made to treat
-        arguments as yaml files
+        arguments as yaml files.
+    - auto_failover : if set, when a connection fails, each url
+        in the list of configured failover_url's will be substituted
+        for server_url and tried.
 
 =cut
 
@@ -61,13 +64,13 @@ sub add_route_attribute {
     $RouteAttributes{$for}->{$route_name}{$attr_name} = $attr_value;
 }
 
-=item get_route_attrribute
+=item get_route_attribute
 
 Like the above but retrieve an attribute.
 
 =cut
 
-sub get_route_attrribute {
+sub get_route_attribute {
     my $class      = shift;
     my $for        = shift;         # e.g. Restmd::Client
     my $route_name = shift;

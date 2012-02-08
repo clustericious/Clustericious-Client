@@ -81,6 +81,7 @@ use JSON::XS;
 use Clustericious::Config;
 use Clustericious::Client::Object;
 use Clustericious::Client::Meta;
+use Clustericious::Client::Meta::Route;
 use MojoX::Log::Log4perl;
 use Log::Log4perl qw/:easy/;
 use File::Temp;
@@ -127,6 +128,7 @@ sub import
     no strict 'refs';
     push @{"${caller}::ISA"}, $class unless $caller->isa($class);
     *{"${caller}::route"} = \&route;
+    *{"${caller}::route_meta"} = \&route_meta;
     *{"${caller}::object"} = \&object;
     *{"${caller}::import"} = sub {};
     }
@@ -316,7 +318,11 @@ sub route
     my $url      = pop || "/$subname";
     my $method   = shift || 'GET';
 
-    Clustericious::Client::Meta->add_route(scalar caller(),$subname,$doc);
+    my $meta = Clustericious::Client::Meta::Route->new(
+            client_class => scalar caller(),
+            route_name => $subname
+    );
+
     if ($objclass)
     {
         eval "require $objclass";
@@ -329,15 +335,34 @@ sub route
         sub
         {
             my $self = shift;
-            $objclass->new($self->_doit($method,$url,@_), $self);
+            $objclass->new($self->_doit($meta,$method,$url,@_), $self);
         };
     }
     else
     {
         no strict 'refs';
-        *{caller() . "::$subname"} = sub { shift->_doit($method,$url,@_); };
+        *{caller() . "::$subname"} = sub { shift->_doit($meta,$method,$url,@_); };
     }
 
+}
+
+=item route_meta
+
+Set metadata attributes for this route.
+
+    route_meta 'bucket_map' => { auto_failover => 1 }
+
+=cut
+
+sub route_meta {
+    my $name = shift;
+    my $attrs = shift;
+    my $meta = Clustericious::Client::Meta::Route->new(
+        client_class => scalar caller(),
+        route_name   => $name
+    );
+
+    $meta->set($_ => $attrs->{$_}) for keys %$attrs;
 }
 
 =head2 C<object>
@@ -403,7 +428,11 @@ sub object
 sub _doit
 {
     my $self = shift;
+    my $meta;
+    $meta = shift if ref $_[0] eq 'Clustericious::Client::Meta::Route';
     my ($method, $url, @args) = @_;
+
+    DEBUG "auto_failover is ".$meta->get('auto_failover') if $meta;
 
     $url = $self->server_url . $url if $self->server_url && $url !~ /^http/;
     return undef if $self->server_url eq 'http://0.0.0.0';
@@ -472,7 +501,7 @@ sub _doit
         my ($realm) = $tx->res->headers->www_authenticate =~ /realm=(.*)$/i;
         my $host = $url->host;
         $self->login( $self->_has_auth ? () : $self->_get_user_pw($host,$realm) );
-        return $self->_doit(@_);
+        return $self->_doit($meta, @_);
     }
 
     unless ($tx->res->is_status_class(200)) {
