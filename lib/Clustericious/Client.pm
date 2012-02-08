@@ -543,7 +543,8 @@ sub _doit {
         ERROR $msg;
         return undef;
     }
-    INFO "$msg but will try ".@$failover_urls." failover urls";
+    INFO "$msg but will try up to ".@$failover_urls." failover urls";
+    TRACE "Failover urls : @$failover_urls";
     for my $url (@$failover_urls) {
         DEBUG "Trying $url";
         $self->server_url($url);
@@ -648,7 +649,11 @@ Retrieve the version on the server.
 
 sub version {
     my $self = shift;
-    $self->_doit(GET => '/version');
+    my $meta = Clustericious::Client::Meta::Route->new(
+        route_name => 'version',
+        client_class => ref $self);
+    $meta->set(auto_failover => 1);
+    $self->_doit($meta, GET => '/version');
 }
 
 =item status
@@ -659,7 +664,11 @@ Retrieve the status from the server.
 
 sub status {
     my $self = shift;
-    $self->_doit(GET => '/status');
+    my $meta = Clustericious::Client::Meta::Route->new(
+        route_name => 'status',
+        client_class => ref $self);
+    $meta->set(auto_failover => 1);
+    $self->_doit($meta, GET => '/status');
 }
 
 =item api
@@ -670,7 +679,12 @@ Retrieve the API from the server
 
 sub api {
     my $self = shift;
-    $self->_doit(GET => '/api');
+    my $meta = Clustericious::Client::Meta::Route->new(
+        route_name   => 'api',
+        client_class => ref $self
+    );
+    $meta->set( auto_failover => 1 );
+    $self->_doit( $meta, GET => '/api' );
 }
 
 =item logtail
