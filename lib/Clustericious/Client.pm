@@ -31,6 +31,10 @@ Clustericious::Client - Constructor for clients of Clustericious apps
 
  route status => \"Get the status";        # Scalar refs are documentation
 
+ route_doc status => "Get the status";     # or you can use route_doc
+
+ route_meta status => { auto_failover => 1 } # route_meta sets attributes of routes
+
  ----------------------------------------------------------------------
 
  use Foo::Client;
@@ -129,6 +133,9 @@ sub import
     push @{"${caller}::ISA"}, $class unless $caller->isa($class);
     *{"${caller}::route"} = \&route;
     *{"${caller}::route_meta"} = \&route_meta;
+    *{"${caller}::route_doc"} = sub {
+        Clustericious::Client::Meta->add_route( $caller, @_ )
+    };
     *{"${caller}::object"} = \&object;
     *{"${caller}::import"} = sub {};
     }
