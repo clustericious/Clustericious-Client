@@ -49,9 +49,9 @@ Recognized attributes :
 
     - dont_read_files : if set, no attempt will be made to treat
         arguments as yaml files.
-    - auto_failover : if set, when a connection fails, each url
-        in the list of configured failover_url's will be substituted
-        for server_url and tried.
+    - auto_failover : if set, when a connection fails and does not
+        return a status code, each url in the list of configured
+        failover_url's will be tried in turn.
 
 =cut
 

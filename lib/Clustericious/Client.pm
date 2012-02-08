@@ -425,14 +425,14 @@ sub object
         sub { shift->_doit(POST => "$url/search", @_) };
 }
 
-sub _doit
-{
+sub _doit {
     my $self = shift;
     my $meta;
     $meta = shift if ref $_[0] eq 'Clustericious::Client::Meta::Route';
     my ($method, $url, @args) = @_;
 
-    DEBUG "auto_failover is ".$meta->get('auto_failover') if $meta;
+    my $auto_failover;
+    $auto_failover = 1 if $meta && $meta->get('auto_failover');
 
     $url = $self->server_url . $url if $self->server_url && $url !~ /^http/;
     return undef if $self->server_url eq 'http://0.0.0.0';
@@ -494,7 +494,8 @@ sub _doit
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
 
     $tx = $self->client->start($tx);
-    $self->res($tx->res);
+    my $res = $tx->res;
+    $self->res($res);
 
     if (($tx->res->code||0) == 401 && !$url->userinfo && ($self->_has_auth || $self->_can_auth)) {
         DEBUG "received code 401, trying again with credentials";
@@ -504,27 +505,53 @@ sub _doit
         return $self->_doit($meta, @_);
     }
 
-    unless ($tx->res->is_status_class(200)) {
-        my $body = $tx->res->body || '';
-        $body &&= " ($body)";
-        my ($msg,$code) = $tx->error;
-        $code &&= "$code ";
-        my $brief = $body;
-        $brief =~ s/\n/ /g if $brief;
-        if ($code && $code==404) {
-            TRACE "$method $url : $code".$tx->res->message unless $ENV{ACPS_SUPPRESS_404} && $url =~ /$ENV{ACPS_SUPPRESS_404}/;
+    if ($res->is_status_class(200)) {
+        TRACE "Got response : ".$res->to_string;
+        return $method =~ /HEAD|DELETE/       ? 1
+            : $res->headers->content_type eq 'application/json' ? decode_json($res->body)
+            : $res->body;
+    }
+
+    # Failed.
+    my ($msg,$code) = $tx->error;
+    $msg ||= 'unknown error';
+    my $s_url = _sanitize_url($url);
+
+    if ($code) {
+        if ($code == 404) {
+            TRACE "$method $url : $code $msg"
+                 unless $ENV{ACPS_SUPPRESS_404} 
+                     && $url =~ /$ENV{ACPS_SUPPRESS_404}/;
         } else {
-            ERROR "Error trying to $method "._sanitize_url($url)." : ".($code || '').($msg || 'connection error');
+            ERROR "Error trying to $method $s_url : $code $msg";
+            TRACE "Full error body : ".$res->body if $res->body;
+            my $brief = $res->body || '';
+            $brief =~ s/\n/ /g;
             ERROR substr($brief,0,200) if $brief;
-            TRACE "Full error body : $body";
         }
+        # No failover for legitimate status codes.
         return undef;
     }
 
-    TRACE "Got response : ".$tx->res->to_string;
-    return $method =~ /HEAD|DELETE/ ? 1
-            : $tx->res->headers->content_type eq 'application/json' ? decode_json($tx->res->body)
-            : $tx->res->body;
+    unless ($auto_failover) {
+        ERROR "Error trying to $method $s_url : $msg";
+        ERROR $res->body if $res->body;
+        return undef;
+    }
+    my $failover_urls = $self->_config->failover_urls(default => []);
+    unless (@$failover_urls) {
+        ERROR $msg;
+        return undef;
+    }
+    INFO "$msg but will try ".@$failover_urls." failover urls";
+    for my $url (@$failover_urls) {
+        DEBUG "Trying $url";
+        $self->server_url($url);
+        my $got = $self->_doit(@_);
+        return $got if $got;
+    }
+
+    return undef;
 }
 
 sub _mycallback
