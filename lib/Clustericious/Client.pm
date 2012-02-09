@@ -527,7 +527,7 @@ sub _doit {
     if ($code) {
         if ($code == 404) {
             TRACE "$method $url : $code $msg"
-                 unless $ENV{ACPS_SUPPRESS_404} 
+                 unless $ENV{ACPS_SUPPRESS_404}
                      && $url =~ /$ENV{ACPS_SUPPRESS_404}/;
         } else {
             ERROR "Error trying to $method $s_url : $code $msg";
