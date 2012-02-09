@@ -42,7 +42,6 @@ sub set {
         $self->client_class, $self->route_name, @_ );
 }
 
-
 =head2 get
 
 Get a route attribute.
@@ -55,6 +54,19 @@ sub get {
     my $self = shift;
     return Clustericious::Client::Meta->get_route_attribute(
         $self->client_class, $self->route_name, @_ );
+}
+
+=head2 doc
+
+Get documentation for this route.
+
+=cut
+
+sub doc {
+    my $self = shift;
+    return Clustericious::Client::Meta->get_route_doc(
+        $self->client_class, $self->route_name, @_
+    );
 }
 
 1;

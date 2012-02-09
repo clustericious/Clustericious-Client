@@ -36,6 +36,22 @@ sub add_route { # Keep track of routes that have are added.
     push @{ $Routes{$for} }, [ $route_name => $route_doc ];
 }
 
+=item get_route_doc
+
+Get documentation for a route.
+
+    $meta->get_route_doc($class,$route_name);
+
+=cut
+
+sub get_route_doc {
+    my $class      = shift;
+    my $for        = shift;         # e.g. Restmd::Client
+    my $route_name = shift;         # same as $subname
+    my ($found) = grep { $_->[0] eq $route_name } @{ $Routes{$for} };
+    return $found->[1];
+}
+
 =item add_route_attribute
 
 Add an attribute for a route.

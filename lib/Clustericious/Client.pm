@@ -639,6 +639,26 @@ sub _get_user_pw  {
     return ($user,$pw);
 }
 
+=item meta_for
+
+Get the metadata for a route.
+
+    $client->meta_for('welcome');
+
+Returns a Clustericious::Client::Meta::Route object.
+
+=cut
+
+sub meta_for {
+    my $self = shift;
+    my $route_name = shift;
+    my $meta = Clustericious::Client::Meta::Route->new(
+        route_name   => $route_name,
+        client_class => ref $self
+    );
+}
+
+
 =head1 COMMON ROUTES
 
 These are routes that are automatically supported by all clients.
@@ -656,9 +676,7 @@ Retrieve the version on the server.
 
 sub version {
     my $self = shift;
-    my $meta = Clustericious::Client::Meta::Route->new(
-        route_name => 'version',
-        client_class => ref $self);
+    my $meta = $self->meta_for("version");
     $meta->set(auto_failover => 1);
     $self->_doit($meta, GET => '/version');
 }
@@ -671,9 +689,7 @@ Retrieve the status from the server.
 
 sub status {
     my $self = shift;
-    my $meta = Clustericious::Client::Meta::Route->new(
-        route_name => 'status',
-        client_class => ref $self);
+    my $meta = $self->meta_for("status");
     $meta->set(auto_failover => 1);
     $self->_doit($meta, GET => '/status');
 }
@@ -686,10 +702,7 @@ Retrieve the API from the server
 
 sub api {
     my $self = shift;
-    my $meta = Clustericious::Client::Meta::Route->new(
-        route_name   => 'api',
-        client_class => ref $self
-    );
+    my $meta = $self->meta_for("api");
     $meta->set( auto_failover => 1 );
     $self->_doit( $meta, GET => '/api' );
 }
