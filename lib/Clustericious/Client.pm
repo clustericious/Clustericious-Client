@@ -3,7 +3,7 @@ package Clustericious::Client;
 use strict; no strict 'refs';
 use warnings;
 
-our $VERSION = '0.46';
+our $VERSION = '0.47';
 
 =head1 NAME
 
