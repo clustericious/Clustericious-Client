@@ -509,7 +509,7 @@ sub _doit {
         my ($realm) = $tx->res->headers->www_authenticate =~ /realm=(.*)$/i;
         my $host = $url->host;
         $self->login( $self->_has_auth ? () : $self->_get_user_pw($host,$realm) );
-        return $self->_doit($meta, @_);
+        return $self->_doit($meta ? $meta : (), @_);
     }
 
     if ($res->is_status_class(200)) {
