@@ -283,6 +283,7 @@ parts)
 sub errorstring
 {
     my $self = shift;
+    return unless $self->res;
     return if $self->res->code && $self->res->is_status_class(200);
     $self->res->error
       || sprintf( "(%d) %s", $self->res->code, $self->res->message );
