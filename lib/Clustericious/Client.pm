@@ -283,6 +283,7 @@ parts)
 sub errorstring
 {
     my $self = shift;
+    WARN "Missing response in client object" unless $self->res;
     return unless $self->res;
     return if $self->res->code && $self->res->is_status_class(200);
     $self->res->error
