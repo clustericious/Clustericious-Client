@@ -120,7 +120,7 @@ res->code and res->message are the returned HTTP code and message.
 =cut
 
 has server_url => '';
-has [qw(res userinfo client)];
+has [qw(tx res userinfo client)];
 has _remote => ''; # Access via remote()
 
 sub import
@@ -461,6 +461,7 @@ sub _doit {
         if (ref $arg eq 'HASH')
         {
             $method = 'POST';
+
             $body = encode_json $arg;
             $headers = { 'Content-Type' => 'application/json' };
         }
@@ -505,6 +506,7 @@ sub _doit {
     $tx = $self->client->start($tx);
     my $res = $tx->res;
     $self->res($res);
+    $self->tx($tx);
 
     if (($tx->res->code||0) == 401 && !$url->userinfo && ($self->_has_auth || $self->_can_auth)) {
         DEBUG "received code 401, trying again with credentials";
@@ -573,6 +575,7 @@ sub _mycallback
         my ($client, $tx) = @_;
 
         $self->res($tx->res);
+        $self->tx($tx);
 
         if ($tx->res->is_status_class(200))
         {
