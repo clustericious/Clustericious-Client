@@ -518,8 +518,12 @@ sub _doit {
 
     if ($res->is_status_class(200)) {
         TRACE "Got response : ".$res->to_string;
+        my $content_type = $res->headers->content_type || do {
+            WARN "No content-type from "._sanitize_url($url);
+            "text/plain";
+        };
         return $method =~ /HEAD|DELETE/       ? 1
-            : $res->headers->content_type eq 'application/json' ? decode_json($res->body)
+            : $content_type eq 'application/json' ? decode_json($res->body)
             : $res->body;
     }
 
