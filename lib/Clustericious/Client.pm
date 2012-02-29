@@ -613,7 +613,7 @@ sub _appname {
 
 sub _config {
     my $self = shift;
-    my $conf = Clustericious::Config->new($self->_appname);
+    my $conf = $self->_base_config;
     if (my $remote = $self->_remote) {
         return $conf->remotes->$remote;
     }
@@ -622,7 +622,10 @@ sub _config {
 
 sub _base_config {
     # Independent of remotes
-    return Clustericious::Config->new(shift->_appname);
+    my $self = shift;
+    return $self->{_base_config} if defined($self->{_base_config});
+    $self->{_base_config} = Clustericious::Config->new($self->_appname);
+    return $self->{_base_config};
 }
 
 sub _has_auth {
