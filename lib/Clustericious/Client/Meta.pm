@@ -126,7 +126,7 @@ documentation.
 sub routes {
     my $class = shift;
     my $for = shift;
-    return [ @CommonRoutes, @{$Routes{$for}}];
+    return [ @CommonRoutes, @{$Routes{$for} || []}];
 }
 
 sub objects {
