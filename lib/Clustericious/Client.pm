@@ -122,6 +122,7 @@ res->code and res->message are the returned HTTP code and message.
 has server_url => '';
 has [qw(tx res userinfo client)];
 has _remote => ''; # Access via remote()
+has _cache => sub { + {} }; # cache of credentials
 
 sub import
 {
@@ -644,10 +645,12 @@ sub _get_user_pw  {
     my $self = shift;
     my $host = shift;
     my $realm = shift;
+    return @{ $self->_cache->{$host}{$realm} } if exists($self->_cache->{$host}{$realm});
     # "use"ing causes too many warnings; load on demand.
     require IO::Prompt;
     my $user = IO::Prompt::prompt("Username for $realm at $host : ");
     my $pw = IO::Prompt::prompt("Password : ",{-echo=>'*'});
+    $self->_cache->{$host}{$realm} = [ $user, $pw ];
     return ($user,$pw);
 }
 
