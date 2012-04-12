@@ -456,7 +456,8 @@ sub _doit {
         @args = ( { @args } );
     }
 
-    my $parameters = Mojo::Parameters->new();
+    $url = Mojo::URL->new($url) unless ref $url;
+    my $parameters = $url->query;
     while (defined(my $arg = shift @args))
     {
         if (ref $arg eq 'HASH')
@@ -491,11 +492,9 @@ sub _doit {
             $url .= "/$arg";
         }
     }
-    $url = Mojo::URL->new($url) unless ref $url;
     $url = $url->to_abs unless $url->is_abs;
     WARN "url $url is not absolute" unless $url =~ /^http/i;
 
-    $url->query($parameters);
     $url->userinfo($self->userinfo) if $self->userinfo;
 
     DEBUG ( (ref $self)." : $method " ._sanitize_url($url));
