@@ -489,7 +489,7 @@ sub _doit {
         }
         else
         {
-            $url .= "/$arg";
+            push @{ $url->path->parts }, $arg;
         }
     }
     $url = $url->to_abs unless $url->is_abs;
