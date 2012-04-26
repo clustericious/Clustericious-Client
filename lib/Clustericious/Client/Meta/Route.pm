@@ -69,6 +69,12 @@ sub doc {
     );
 }
 
+=item set_doc
+
+set the documentation for a route
+
+=cut
+
 sub set_doc {
     my $self = shift;
     return Clustericious::Client::Meta->add_route(
