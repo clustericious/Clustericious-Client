@@ -69,5 +69,12 @@ sub doc {
     );
 }
 
+sub set_doc {
+    my $self = shift;
+    return Clustericious::Client::Meta->add_route(
+        $self->client_class, $self->route_name, @_
+    );
+}
+
 1;
 

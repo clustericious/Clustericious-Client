@@ -328,10 +328,13 @@ sub route
     my $url      = pop || "/$subname";
     my $method   = shift || 'GET';
 
+    my $client_class = scalar caller();
     my $meta = Clustericious::Client::Meta::Route->new(
             client_class => scalar caller(),
             route_name => $subname
     );
+
+    $meta->set_doc($doc);
 
     if ($objclass)
     {
