@@ -19,7 +19,7 @@ our @CommonRoutes = ( [ "version" => '' ], [ "status" => '' ], [ "api" => '' ], 
 
 =item add_route
 
-Add a route.
+Add or replace documentation about a route.
 
 Parameters :
     - the name of the client class
@@ -33,6 +33,11 @@ sub add_route { # Keep track of routes that have are added.
     my $for        = shift;         # e.g. Restmd::Client
     my $route_name = shift;         # same as $subname
     my $route_doc  = shift || '';
+
+    if (my ($found) = grep { $_->[0] eq $route_name } @{ $Routes{$for} }) {
+        $found->[1] = $route_doc;
+        return;
+    }
     push @{ $Routes{$for} }, [ $route_name => $route_doc ];
 }
 
