@@ -426,8 +426,8 @@ sub object {
         route_name   => $objname
     );
 
-    # Creating something is quiet : just returns the status, no output
-    $meta->set(quiet => 1 );
+    # Creating something is quiet_post : just returns the status, no output
+    $meta->set(quiet_post => 1 );
 
     no strict 'refs';
     *{"${caller}::$objname"} = sub {
