@@ -145,39 +145,14 @@ sub run
         return;
     }
 
-    if ($method eq 'delete')
-    {
-        $method = shift @_;
-        $class->_usage($client,"Missing <object>") unless $method;
-
-        $method .= '_delete';
-
-        $class->_usage($client,"Invalid object $method") unless $client->can($method);
-
-        $client->$method(@_) or ERROR $client->errorstring;
-        return;
+    if ( $method =~ /^(delete|search)$/ ) { # e.g. search -> app_search
+        $method = ( shift @_ ) . '_' . $method;
     }
-
-    if ($method eq 'search')
-    {
-        $method = shift @_;
-
-        $class->_usage($client,"Missing <object>") unless $method;
-
-        $method .= '_search';
-
-        INFO "calling $method";
-        my $ret = $client->$method(@_) or ERROR $client->errorstring;
-        print _prettyDump($ret);
-
-        return;
-    }
-
 
     if ($client->can($method))
     {
         if ( !Clustericious::Client::Meta->get_route_attribute(ref $client,$method,'dont_read_files')
-            && $_[-1] && $_[-1] =~ /\.(ya?ml|txt)$/ && -r $_[-1] ) {
+            && -r $_[-1] ) {
             my $filename = pop @_;
             INFO "Reading file $filename";
             my $content = LoadFile($filename)
