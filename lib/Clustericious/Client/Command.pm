@@ -28,6 +28,7 @@ use YAML::XS qw(Load Dump LoadFile);
 use Log::Log4perl qw/:easy/;
 use Scalar::Util qw/blessed/;
 use Data::Rmap qw/rmap_ref/;
+use File::Temp;
 
 use Clustericious::Client::Meta;
 
@@ -71,9 +72,53 @@ EOPRINT
 
 =cut
 
+our $Ssh = "ssh -o StrictHostKeyChecking=no -o BatchMode=yes -o PasswordAuthentication=no";
+sub _expand_remote_glob {
+    # Given a glob, e.g. omidev.gsfc.nasa.gov:/devsips/app/*/doc/Description.txt
+    # Return a list of filenames with the host prepended to each one, e.g.
+    #       omidev.gsfc.nasa.gov:/devsips/app/foo-1/doc/Description.txt
+    #       omidev.gsfc.nasa.gov:/devsips/app/bar-2/doc/Description.txt
+    my $pattern = shift;
+    return ( $pattern ) unless $pattern =~ /^(\S+):(.*)$/;
+    my ($host,$file) = ( $1, $2 );
+    return ( $pattern ) unless $file =~ /[*?]/;
+    INFO "Remote glob : $host:$file";
+    my $errs =  File::Temp->new();
+    my @filenames = `$Ssh $host ls $file 2>$errs`;
+    LOGDIE "Error ssh $host ls $file returned (code $?)".`tail -2 $errs` if $?;
+    return map "$host:$_", @filenames;
+}
+
+sub _load_yaml {
+    # _load_yaml can take a local filename or a remote ssh host + filename and
+    # returns parsed yaml content.
+    my $filename = shift;
+
+    unless ($filename =~ /^(\S+):(.*)$/) {
+        INFO "Loading $filename";
+        my $parsed = LoadFile($filename) or LOGDIE "Invalid YAML : $filename\n";
+        return $parsed;
+    }
+
+    my ($host,$file) = ($1,$2);
+    INFO "Loading remote file $file from $host";
+    my $errs =  File::Temp->new();
+    my $content = `$Ssh $host cat $file 2>$errs`;
+    if ($?) {
+        LOGDIE "Error (code $?) running ssh $host cat $file : ".`tail -2 $errs`;
+    }
+    my $parsed = Load($content) or do {
+        ERROR "Invalid YAML: $filename";
+        return;
+    };
+    return $parsed;
+}
+
 sub run {
     my $class = shift;
     my $client = shift;
+
+    return $class->_usage($client) if $ARGV[0] =~ /help/;
 
     my $arg;
     ARG :
@@ -89,96 +134,71 @@ sub run {
         }
     }
 
-    my $method = $arg;
+    my $method = $arg or $class->_usage($client);
 
-    $class->_usage($client) unless $method;
-
+    # Map some alternative command line forms.
     if ( $method eq 'create' ) {
-        $method = shift @_;
-        $class->_usage( $client, "Missing <object>" ) unless $method;
-        $class->_usage( $client, "Invalid method $method" )
-          unless $client->can($method);
-        if (@_) {
-            foreach my $filename (@_) {
-                my $content = LoadFile($filename)
-                  or LOGDIE "Invalid YAML : $filename\n";
-                print "Loading $filename\n";
-                $client->$method($content) or ERROR $client->errorstring;
-            }
-        }
-        else {
-            my $content = Load( join( '', <STDIN> ) )
-              or LOGDIE "Invalid YAML content\n";
-            $client->$method($content) or ERROR $client->errorstring;
-        }
-        return;
-    }
-
-    if ( $method eq 'update' ) {
-        $method = shift @_;
-        $class->_usage( $client, "Missing <object>" ) unless $method;
-        my $content;
-        if ( -r $_[-1] )    # Does it look like a filename?
-        {
-            my $filename = pop @_;
-            $content = LoadFile($filename)
-              or LOGDIE "Invalid YAML: $filename\n";
-            print "Loading $filename\n";
-        }
-        else {
-            $content = Load( join( '', <STDIN> ) )
-              or LOGDIE "Invalid YAML: stdin\n";
-        }
-        my $ret = $client->$method( @_, $content )
-          or ERROR $client->errorstring;
-        print _prettyDump($ret);
-        return;
+        $method = shift @_ or $class->_usage( $client, "Missing <object>" );
     }
 
     if ( $method =~ /^(delete|search)$/ ) { # e.g. search -> app_search
         $method = ( shift @_ ) . '_' . $method;
     }
 
-    if ($client->can($method)) {
-
-        # Read YAML files automatically
-        if ( !Clustericious::Client::Meta->get_route_attribute(ref $client,$method,'dont_read_files')
-            && -r $_[-1] ) {
-            my $filename = pop @_;
-            INFO "Reading file $filename";
-            my $content = LoadFile($filename)
-                or LOGDIE "Invalid YAML: $filename\n";
-            push @_, $content;
-        }
-
-        # Now dispatch to the method.
-        if (my $obj = $client->$method(@_)) {
-            if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
-                if ( my $res = $obj->success ) {
-                    print $res->code," ",$res->default_message,"\n";
-                }
-                else {
-                    my ( $message, $code ) = $obj->error;
-                    if ($code) {
-                        print "$code $message response.\n";
-                    }
-                    else {
-                        print "Connection error: $message\n";
-                    }
-                }
-            } elsif (ref $obj eq 'HASH' && keys %$obj == 1 && $obj->{text}) {
-                print $obj->{text};
-            } else {
-                print _prettyDump($obj);
-            }
-        } else {
-            ERROR $client->errorstring if $client->errorstring;
-        }
+    unless ($client->can($method)) {
+        $class->_usage($client, "Unrecognized arguments");
         return;
     }
 
-    $class->_usage($client) if $ARGV[0] =~ /help/;
-    $class->_usage($client, "Unrecognized arguments");
+    my $meta = Clustericious::Client::Meta::Route->new(
+        route_name   => $method,
+        client_class => ref $client
+    );
+
+    my @extra_args = ( '/dev/null' );
+    my $have_filenames;
+
+    # Currently only support one filename or a remote glob
+    # This can be improved if we add full argument processing too
+    # before dispatching.
+    if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /:/ ) ) {
+        @extra_args = _expand_remote_glob(pop @_);
+        $have_filenames = 1;
+    }
+
+    # Finally, run :
+    for my $arg (@extra_args) {
+        my $obj;
+        if ($have_filenames) {
+            $obj = $client->$method(@_, _load_yaml($arg));
+        } else {
+            $obj = $client->$method(@_);
+        }
+        ERROR $client->errorstring if $client->errorstring;
+        next unless $obj;
+
+        if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
+            if ( my $res = $obj->success ) {
+                print $res->code," ",$res->default_message,"\n";
+            } else {
+                my ( $message, $code ) = $obj->error;
+                ERROR $code if $code;
+                ERROR $message;
+            }
+        } elsif (ref $obj eq 'HASH' && keys %$obj == 1 && $obj->{text}) {
+            print $obj->{text};
+        } elsif ($meta->get("quiet")) {
+            my $msg = $client->res->code." ".$client->res->default_message;
+            my $got = $client->res->json;
+            if ($got && ref $got eq 'HASH' and keys %$got==1 && $got->{text}) {
+                $msg .= " ($got->{text})";
+            }
+            INFO $msg;
+        } else {
+           print _prettyDump($obj);
+        }
+    }
+    return;
 }
 
 sub _prettyDump {

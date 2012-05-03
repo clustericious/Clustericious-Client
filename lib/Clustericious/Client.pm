@@ -403,8 +403,7 @@ L<Clustericious::Client::Object>.
 
 =cut
 
-sub object
-{
+sub object {
     my $objname = shift;
     my $url     = shift || "/$objname";
     my $doc     = ref $_[-1] eq 'SCALAR' ? ${ pop() } : '';
@@ -422,20 +421,26 @@ sub object
 
     Clustericious::Client::Meta->add_object(scalar caller(),$objname,$doc);
 
+    my $meta = Clustericious::Client::Meta::Route->new(
+        client_class => scalar caller(),
+        route_name   => $objname
+    );
+
+    # Creating something is quiet : just returns the status, no output
+    $meta->set(quiet => 1 );
+
     no strict 'refs';
-    *{"${caller}::$objname"} =
-    sub
-    {
+    *{"${caller}::$objname"} = sub {
         my $self = shift;
-        my $data = $self->_doit(GET => $url, @_);
+        my $data = $self->_doit($meta, GET => $url, @_);
         $objclass->new($data, $self);
     };
 
     *{"${caller}::${objname}_delete"} =
-        sub { shift->_doit(DELETE => $url, @_) };
+        sub { shift->_doit($meta, DELETE => $url, @_) };
 
     *{"${caller}::${objname}_search"} =
-        sub { shift->_doit(POST => "$url/search", @_) };
+        sub { shift->_doit($meta, POST => "$url/search", @_) };
 }
 
 sub _doit {
@@ -463,10 +468,9 @@ sub _doit {
     my $parameters = $url->query;
     while (defined(my $arg = shift @args))
     {
-        if (ref $arg eq 'HASH')
-        {
+        if (ref $arg eq 'HASH') {
             $method = 'POST';
-
+            $parameters->append(skip_existing => 1) if $meta && $meta->get("skip_existing");
             $body = encode_json $arg;
             $headers = { 'Content-Type' => 'application/json' };
         }
