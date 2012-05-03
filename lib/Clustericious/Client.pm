@@ -364,6 +364,8 @@ sub route
 Set metadata attributes for this route.
 
     route_meta 'bucket_map' => { auto_failover => 1 }
+    route_meta 'bucket_map' => { quiet_post => 1 }
+    route_meta 'bucket_map' => { skip_existing => 1 }
 
 =cut
 
