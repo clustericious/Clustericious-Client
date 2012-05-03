@@ -71,8 +71,7 @@ EOPRINT
 
 =cut
 
-sub run
-{
+sub run {
     my $class = shift;
     my $client = shift;
 
@@ -94,53 +93,44 @@ sub run
 
     $class->_usage($client) unless $method;
 
-    if ($method eq 'create')
-    {
+    if ( $method eq 'create' ) {
         $method = shift @_;
-        $class->_usage($client,"Missing <object>") unless $method;
-
-        $class->_usage($client,"Invalid method $method") unless $client->can($method);
-
-        if (@_)
-        {
-            foreach my $filename (@_)
-            {
+        $class->_usage( $client, "Missing <object>" ) unless $method;
+        $class->_usage( $client, "Invalid method $method" )
+          unless $client->can($method);
+        if (@_) {
+            foreach my $filename (@_) {
                 my $content = LoadFile($filename)
-                    or LOGDIE "Invalid YAML : $filename\n";
+                  or LOGDIE "Invalid YAML : $filename\n";
                 print "Loading $filename\n";
                 $client->$method($content) or ERROR $client->errorstring;
             }
         }
-        else
-        {
-            my $content = Load(join('', <STDIN>))
-                or LOGDIE "Invalid YAML content\n";
-
+        else {
+            my $content = Load( join( '', <STDIN> ) )
+              or LOGDIE "Invalid YAML content\n";
             $client->$method($content) or ERROR $client->errorstring;
         }
         return;
     }
 
-    if ($method eq 'update')
-    {
+    if ( $method eq 'update' ) {
         $method = shift @_;
-        $class->_usage($client,"Missing <object>") unless $method;
-
+        $class->_usage( $client, "Missing <object>" ) unless $method;
         my $content;
-        if (-r $_[-1])  # Does it look like a filename?
+        if ( -r $_[-1] )    # Does it look like a filename?
         {
             my $filename = pop @_;
             $content = LoadFile($filename)
-                or LOGDIE "Invalid YAML: $filename\n";
+              or LOGDIE "Invalid YAML: $filename\n";
             print "Loading $filename\n";
         }
-        else
-        {
-            $content = Load(join('', <STDIN>))
-                or LOGDIE "Invalid YAML: stdin\n";
+        else {
+            $content = Load( join( '', <STDIN> ) )
+              or LOGDIE "Invalid YAML: stdin\n";
         }
-        my $ret = $client->$method(@_, $content)
-            or ERROR $client->errorstring;
+        my $ret = $client->$method( @_, $content )
+          or ERROR $client->errorstring;
         print _prettyDump($ret);
         return;
     }
@@ -149,8 +139,9 @@ sub run
         $method = ( shift @_ ) . '_' . $method;
     }
 
-    if ($client->can($method))
-    {
+    if ($client->can($method)) {
+
+        # Read YAML files automatically
         if ( !Clustericious::Client::Meta->get_route_attribute(ref $client,$method,'dont_read_files')
             && -r $_[-1] ) {
             my $filename = pop @_;
@@ -159,8 +150,9 @@ sub run
                 or LOGDIE "Invalid YAML: $filename\n";
             push @_, $content;
         }
-        if (my $obj = $client->$method(@_))
-        {
+
+        # Now dispatch to the method.
+        if (my $obj = $client->$method(@_)) {
             if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
                 if ( my $res = $obj->success ) {
                     print $res->code," ",$res->default_message,"\n";
@@ -179,9 +171,7 @@ sub run
             } else {
                 print _prettyDump($obj);
             }
-        }
-        else
-        {
+        } else {
             ERROR $client->errorstring if $client->errorstring;
         }
         return;
