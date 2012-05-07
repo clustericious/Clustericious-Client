@@ -161,9 +161,14 @@ sub run {
     # Currently only support one filename or a remote glob
     # This can be improved if we add full argument processing too
     # before dispatching.
-    if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /:/ ) ) {
+    if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /^\S+:/ ) ) {
         @extra_args = _expand_remote_glob(pop @_);
         $have_filenames = 1;
+    } elsif ( (-r STDIN) && $meta->get('try_stdin_instead_of_args') && @_==0) {
+        my $content = join '', <STDIN>;
+        $content = Load($content);
+        LOGDIE "Invalid yaml content in $method" unless $content;
+        push @_, $content;
     }
 
     # Finally, run :
