@@ -137,8 +137,10 @@ sub run {
     my $method = $arg or $class->_usage($client);
 
     # Map some alternative command line forms.
+    my $try_stdin;
     if ( $method eq 'create' ) {
         $method = shift @_ or $class->_usage( $client, "Missing <object>" );
+        $try_stdin = 1;
     }
 
     if ( $method =~ /^(delete|search)$/ ) { # e.g. search -> app_search
@@ -164,7 +166,7 @@ sub run {
     if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /^\S+:/ ) ) {
         @extra_args = _expand_remote_glob(pop @_);
         $have_filenames = 1;
-    } elsif ( (-r STDIN) && $meta->get('try_stdin_instead_of_args') && @_==0) {
+    } elsif ( $try_stdin && (-r STDIN) && @_==0) {
         my $content = join '', <STDIN>;
         $content = Load($content);
         LOGDIE "Invalid yaml content in $method" unless $content;

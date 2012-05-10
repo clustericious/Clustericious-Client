@@ -430,7 +430,6 @@ sub object {
 
     # Creating something is quiet_post : just returns the status, no output
     $meta->set(quiet_post => 1 );
-    $meta->set(try_stdin_instead_of_args => 1); # Allow yaml in stdin
 
     no strict 'refs';
     *{"${caller}::$objname"} = sub {
