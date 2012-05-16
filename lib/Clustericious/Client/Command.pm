@@ -118,7 +118,7 @@ sub run {
     my $class = shift;
     my $client = shift;
 
-    return $class->_usage($client) if $ARGV[0] =~ /help/;
+    return $class->_usage($client) if !$ARGV[0] || $ARGV[0] =~ /help/;
 
     my $arg;
     ARG :
