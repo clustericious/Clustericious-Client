@@ -175,7 +175,8 @@ sub AUTOLOAD
             $value = __PACKAGE__->new($value);
         }
 
-        return wantarray && (ref $value eq 'ARRAY') ? @$value
+        return wantarray && !defined($value) ? ()
+             : wantarray && (ref $value eq 'ARRAY') ? @$value
              : wantarray && (ref $value) ? %$value
              : $value;
     };
