@@ -17,3 +17,4 @@ t/object_array.t
 t/object_derived.t
 t/params.t
 t/podcoverage.t
+META.json

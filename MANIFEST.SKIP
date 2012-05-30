@@ -48,3 +48,4 @@
 # Avoid archives of this distribution
 \bClustericious-Client-[\d\.\_]+
 ^MYMETA.yml$
+^MYMETA\.json$
