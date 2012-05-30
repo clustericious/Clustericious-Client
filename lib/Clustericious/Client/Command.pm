@@ -160,12 +160,19 @@ sub run {
     my @extra_args = ( '/dev/null' );
     my $have_filenames;
 
-    # Currently only support one filename or a remote glob
-    # This can be improved if we add full argument processing too
-    # before dispatching.
+    # Assume we have files and/or remote globs
     if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /^\S+:/ ) ) {
-        @extra_args = _expand_remote_glob(pop @_);
         $have_filenames = 1;
+        @extra_args = ();
+        while (my $arg = pop @_) {
+            if ($arg =~ /^\S+:/) {
+                push @extra_args, _expand_remote_glob($arg);
+            } elsif (-e $arg) {
+                push @extra_args, $arg;
+            } else {
+                LOGDIE "Do not know how to interpret argument : $arg";
+            }
+        }
     } elsif ( $try_stdin && (-r STDIN) && @_==0) {
         my $content = join '', <STDIN>;
         $content = Load($content);
