@@ -423,26 +423,31 @@ sub object {
 
     Clustericious::Client::Meta->add_object(scalar caller(),$objname,$doc);
 
-    my $meta = Clustericious::Client::Meta::Route->new(
-        client_class => scalar caller(),
-        route_name   => $objname
-    );
-
-    # Creating something is quiet_post : just returns the status, no output
-    $meta->set(quiet_post => 1 );
-
     no strict 'refs';
     *{"${caller}::$objname"} = sub {
         my $self = shift;
-        my $data = $self->_doit($meta, GET => $url, @_);
-        $objclass->new($data, $self);
+        my $meta = Clustericious::Client::Meta::Route->new(
+            client_class => $caller,
+            route_name   => $objname
+        );
+        $meta->set( quiet_post => 1 );
+        my $data = $self->_doit( $meta, GET => $url, @_ );
+        $objclass->new( $data, $self );
     };
-
-    *{"${caller}::${objname}_delete"} =
-        sub { shift->_doit($meta, DELETE => $url, @_) };
-
-    *{"${caller}::${objname}_search"} =
-        sub { shift->_doit($meta, POST => "$url/search", @_) };
+    *{"${caller}::${objname}_delete"} = sub {
+        my $meta = Clustericious::Client::Meta::Route->new(
+            client_class => $caller,
+            route_name   => $objname.'_delete',
+        );
+        shift->_doit( $meta, DELETE => $url, @_ );
+    };
+    *{"${caller}::${objname}_search"} = sub {
+        my $meta = Clustericious::Client::Meta::Route->new(
+            client_class => $caller,
+            route_name   => $objname.'_search'
+        );
+        shift->_doit( $meta, POST => "$url/search", @_ );
+    };
 }
 
 sub _doit {
