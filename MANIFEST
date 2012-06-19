@@ -8,6 +8,7 @@ lib/Clustericious/Client/Object/DateTime.pm
 lib/Clustericious/Client/Object/Params.pm
 MANIFEST			This list of files
 MANIFEST.SKIP
+META.json
 META.yml
 t/basic.t
 t/client.t
@@ -17,4 +18,3 @@ t/object_array.t
 t/object_derived.t
 t/params.t
 t/podcoverage.t
-META.json
