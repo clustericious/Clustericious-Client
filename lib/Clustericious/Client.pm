@@ -513,6 +513,7 @@ sub _doit {
 
     DEBUG ( (ref $self)." : $method " ._sanitize_url($url));
     $headers->{Connection} ||= 'Close';
+    $headers->{Accept}     ||= 'application/json';
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
