@@ -7,7 +7,7 @@ our $VERSION = '0.63';
 
 =head1 NAME
 
-Clustericious::Client - Constructor for clients of Clustericious apps
+Clustericious::Client - Constructor for clients of Clustericious apps.
 
 =head1 SYNOPSIS
 
@@ -73,6 +73,10 @@ The builder functions add methods to the client object that translate
 into basic REST functions.  All of the 'built' methods return undef on
 failure of the REST/HTTP call, and auto-decode the returned body into
 a data structure if it is application/json.
+
+Using Clustericious::Client also allows for easy creation of both
+perl APIs and command line clients for a L<Clustericious> server.
+See L<Clustericious::Client::Command>.
 
 =cut
 
@@ -847,6 +851,10 @@ sub stop_ssh_tunnel {
 Set ACPS_SUPPRESS_404 to a regular expression in order to
 not print messages when a 404 response is returned from urls
 matching that regex.
+
+=head1 NOTES
+
+This is a beta release.  The API is subject to changes without notice.
 
 =cut
 

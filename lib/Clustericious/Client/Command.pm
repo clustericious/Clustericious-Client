@@ -2,21 +2,46 @@ package Clustericious::Client::Command;
 
 =head1 NAME
 
-Clustericious::Client::Command - Command Line type processing for Clients
+Clustericious::Client::Command - Command line type processing for clients.
 
 =head1 SYNOPSIS
+
+# in fooclient :
 
  use Foo::Client;
  use Clustericious::Client::Command;
 
  Clustericious::Client::Command->run(Foo::Client->new, @ARGV);
 
+Then
+
+ fooclient status
+ fooclient --trace root status
+ fooclient version
+ fooclient foobject 31
+ fooclient foobject_search --color beige
+
 =head1 DESCRIPTION
 
 This will try to take command line arguments and call the right client
 methods.
 
-Still needs lots of work..
+Calling 'fooclient bar baz' is equivalent to Foo::Client->new()->bar("baz").
+
+=head1 CAVEATS
+
+There are currently a few heuristics used when one of the arguments
+is a filename (i.e. is it a yaml file that should be parsed and send
+as a hashref, or a filename that should be PUT?  Should STDIN be
+used?).  These need to be formalized and documented.
+
+=head1 NOTES
+
+This is a beta release, the API is subject to change without notice.
+
+=head1 TODO
+
+Document and stabilize the API.
 
 =cut
 
