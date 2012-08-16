@@ -69,9 +69,11 @@ sub doc {
     );
 }
 
+=over
+
 =item set_doc
 
-set the documentation for a route
+Set the documentation for a route.
 
 =cut
 

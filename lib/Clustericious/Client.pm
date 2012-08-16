@@ -96,21 +96,23 @@ use Proc::Daemon;
 This class inherits from L<Mojo::Base>, and handles attributes like
 that class.  The following additional attributes are used.
 
-=head2 C<client>
+=over
+
+=item C<client>
 
 A client to process the HTTP stuff with.  Defaults to a
 L<Mojo::UserAgent>.
 
-=head2 C<app>
+=item C<app>
 
 For testing, you can specify a Mojolicious app name.
 
-=head2 C<server_url>
+=item C<server_url>
 
 You can override the URL prefix for the client, otherwise it
 will look it up in the config file.
 
-=head2 C<res>
+=item C<res>
 
 After an HTTP error, the built methods return undef.  This function
 will return the L<Mojo::Message::Response> from the server.
@@ -142,9 +144,13 @@ sub import
     }
 }
 
+=back
+
 =head1 METHODS
 
-=head2 C<new>
+=over
+
+=item C<new>
 
  my $f = Foo::Client->new();
  my $f = Foo::Client->new(server_url => 'http://someurl');
@@ -203,7 +209,7 @@ sub new
     return $self;
 }
 
-=head2 remote
+=item remote
 
 Tell the client to use the remote information in the configuration.
 For instance, if the config has
@@ -238,7 +244,7 @@ sub remote {
     $self->_remote($remote);
 }
 
-=head2 remotes
+=item remotes
 
 Return a list of available remotes.
 
@@ -250,7 +256,7 @@ sub remotes {
     return keys %found;
 }
 
-=head2 C<login>
+=item C<login>
 
 Log in to the server.  This will send basic auth info
 along with every subsequent request.
@@ -271,7 +277,7 @@ sub login {
     $self->userinfo(join ':', $user,$pw);
 }
 
-=head2 C<errorstring>
+=item C<errorstring>
 
 After an error, this returns an error string made up of the server
 error code and message.  (use res->code and res->message to get the
@@ -291,9 +297,13 @@ sub errorstring
       || sprintf( "(%d) %s", $self->res->code, $self->res->message );
 }
 
+=back
+
 =head1 FUNCTIONS
 
-=head2 C<route>
+=over
+
+=item C<route>
 
  route 'subname';                    # GET /subname
  route subname => '/url';            # GET /url
@@ -380,7 +390,7 @@ sub route_meta {
     $meta->set($_ => $attrs->{$_}) for keys %$attrs;
 }
 
-=head2 C<object>
+=item C<object>
 
  object 'objname';                   # defaults to URL /objname
  object objname => '/some/url';
@@ -687,6 +697,7 @@ sub meta_for {
     );
 }
 
+=back
 
 =head1 COMMON ROUTES
 
@@ -828,6 +839,8 @@ sub stop_ssh_tunnel {
     DEBUG "Killed ssh for ".(ref $self)." ($killed)";
     return 1;
 }
+
+=back
 
 =head1 ENVIRONMENT
 
