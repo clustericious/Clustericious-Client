@@ -1,4 +1,5 @@
 Build.PL
+Changes
 lib/Clustericious/Client.pm
 lib/Clustericious/Client/Command.pm
 lib/Clustericious/Client/Meta.pm
@@ -17,4 +18,5 @@ t/object.t
 t/object_array.t
 t/object_derived.t
 t/params.t
+t/pod.t
 t/podcoverage.t

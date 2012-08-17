@@ -1,5 +1,5 @@
 {
-   "abstract" : "Constructor for clients of Clustericious apps",
+   "abstract" : "Constructor for clients of Clustericious apps.",
    "author" : [
       "Curt Tilmes <Curt.Tilmes@nasa.gov>"
    ],
@@ -37,7 +37,7 @@
    "provides" : {
       "Clustericious::Client" : {
          "file" : "lib/Clustericious/Client.pm",
-         "version" : "0.63"
+         "version" : "0.64"
       },
       "Clustericious::Client::Command" : {
          "file" : "lib/Clustericious/Client/Command.pm",
@@ -65,5 +65,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "0.63"
+   "version" : "0.64"
 }
