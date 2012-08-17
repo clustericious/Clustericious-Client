@@ -84,5 +84,15 @@ sub set_doc {
     );
 }
 
+=item client_class
+
+The class of the client associated with this object.
+
+=item route_name
+
+The name of the route to which this object refers.
+
+=cut
+
 1;
 

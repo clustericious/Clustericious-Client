@@ -213,6 +213,18 @@ sub new
     return $self;
 }
 
+=item tx
+
+The most recent HTTP::Transaction.
+
+=cut
+
+=item userinfo
+
+Credentials currently stored.
+
+=cut
+
 =item remote
 
 Tell the client to use the remote information in the configuration.
