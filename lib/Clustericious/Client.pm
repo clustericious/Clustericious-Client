@@ -200,7 +200,9 @@ sub new
         $self->client(Mojo::UserAgent->new);
         if (not length $self->server_url)
         {
-            $self->server_url($self->_config->url);
+            my $url = $self->_config->url;
+            $url =~ s{/$}{};
+            $self->server_url($url);
         }
     }
 
