@@ -867,6 +867,14 @@ Set ACPS_SUPPRESS_404 to a regular expression in order to
 not print messages when a 404 response is returned from urls
 matching that regex.
 
+=head1 AUTHORS
+
+Brian Duggan
+
+Graham Ollis
+
+Curt Tilmes
+
 =head1 NOTES
 
 This is a beta release.  The API is subject to changes without notice.
