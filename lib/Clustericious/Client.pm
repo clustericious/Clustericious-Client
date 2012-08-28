@@ -466,6 +466,7 @@ sub object {
             client_class => $caller,
             route_name   => $objname.'_delete',
         );
+        $meta->set(dont_read_files => 1);
         shift->_doit( $meta, DELETE => $url, @_ );
     };
     *{"${caller}::${objname}_search"} = sub {
@@ -473,6 +474,7 @@ sub object {
             client_class => $caller,
             route_name   => $objname.'_search'
         );
+        $meta->set(dont_read_files => 1);
         shift->_doit( $meta, POST => "$url/search", @_ );
     };
 }
