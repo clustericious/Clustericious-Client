@@ -226,7 +226,7 @@ sub run {
             }
         } elsif (ref $obj eq 'HASH' && keys %$obj == 1 && $obj->{text}) {
             print $obj->{text};
-        } elsif ($client->tx->req->method eq 'POST' && $meta->get("quiet_post")) {
+        } elsif ($client->tx && $client->tx->req->method eq 'POST' && $meta->get("quiet_post")) {
             my $msg = $client->res->code." ".$client->res->default_message;
             my $got = $client->res->json;
             if ($got && ref $got eq 'HASH' and keys %$got==1 && $got->{text}) {
