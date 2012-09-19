@@ -54,6 +54,7 @@ use Log::Log4perl qw/:easy/;
 use Scalar::Util qw/blessed/;
 use Data::Rmap qw/rmap_ref/;
 use File::Temp;
+use Getopt::Long qw/GetOptionsFromArray/;
 
 use Clustericious::Client::Meta;
 
@@ -142,12 +143,15 @@ sub _load_yaml {
 sub run {
     my $class = shift;
     my $client = shift;
+    my @args = @_;
+    @args = @ARGV unless @args;
 
-    return $class->_usage($client) if !$ARGV[0] || $ARGV[0] =~ /help/;
+    return $class->_usage($client) if !$args[0] || $args[0] =~ /help/;
 
+    # Preprocessing for any common args, e.g. --remote
     my $arg;
     ARG :
-    while ($arg = shift @_) {
+    while ($arg = shift @args) {
         for ($arg) {
             /--remote/ and do {
                 my $remote = shift;
@@ -164,16 +168,16 @@ sub run {
     # Map some alternative command line forms.
     my $try_stdin;
     if ( $method eq 'create' ) {
-        $method = shift @_ or $class->_usage( $client, "Missing <object>" );
+        $method = shift @args or $class->_usage( $client, "Missing <object>" );
         $try_stdin = 1;
     }
 
     if ( $method =~ /^(delete|search)$/ ) { # e.g. search -> app_search
-        $method = ( shift @_ ) . '_' . $method;
+        $method = ( shift @args ) . '_' . $method;
     }
 
     unless ($client->can($method)) {
-        $class->_usage($client, "Unrecognized arguments");
+        $class->_usage($client, "Unrecognized argument : $method");
         return;
     }
 
@@ -182,14 +186,42 @@ sub run {
         client_class => ref $client
     );
 
+    if (my $opts = $meta->get("opts")) {
+        my %req = map { $_->{required} ? ($_->{name} => 1):() } @$opts;
+        my @getopt = map {
+             $_->{name}
+             .($_->{alt} ? "|$_->{alt}" : "")
+             .($_->{type} || '')
+             } @$opts;
+        my %method_args;
+
+        my $doc = join "\n", "Valid options for '$method' are :",
+          map {
+             sprintf('  --%-20s%-15s%s', $_->{name}, $_->{required} ? 'required' : '', $_->{doc} || "" )
+           } @$opts;
+
+        GetOptionsFromArray(\@args, \%method_args, @getopt) or LOGDIE "Invalid options. $doc\n";
+
+        LOGDIE "Unknown option : @args\n$doc\n" if @args;
+        for (@$opts) {
+            my $name = $_->{name};
+            next unless $_->{required};
+            next if exists($method_args{$name});
+            LOGDIE "Missing value for required argument '$name'\n$doc\n";
+        }
+        $client->$method(%method_args);
+        warn '# TODO : autoread some files, allow stdin, dump output';
+        return;
+    }
+
     my @extra_args = ( '/dev/null' );
     my $have_filenames;
 
     # Assume we have files and/or remote globs
-    if ( !$meta->get('dont_read_files') && @_ > 0 && ( -r $_[-1] || $_[-1] =~ /^\S+:/ ) ) {
+    if ( !$meta->get('dont_read_files') && @args > 0 && ( -r $_[-1] || $_[-1] =~ /^\S+:/ ) ) {
         $have_filenames = 1;
         @extra_args = ();
-        while (my $arg = pop @_) {
+        while (my $arg = pop @args) {
             if ($arg =~ /^\S+:/) {
                 push @extra_args, _expand_remote_glob($arg);
             } elsif (-e $arg) {
@@ -198,20 +230,20 @@ sub run {
                 LOGDIE "Do not know how to interpret argument : $arg";
             }
         }
-    } elsif ( $try_stdin && (-r STDIN) && @_==0) {
+    } elsif ( $try_stdin && (-r STDIN) && @args==0) {
         my $content = join '', <STDIN>;
         $content = Load($content);
         LOGDIE "Invalid yaml content in $method" unless $content;
-        push @_, $content;
+        push @args, $content;
     }
 
     # Finally, run :
     for my $arg (@extra_args) {
         my $obj;
         if ($have_filenames) {
-            $obj = $client->$method(@_, _load_yaml($arg));
+            $obj = $client->$method(@args, _load_yaml($arg));
         } else {
-            $obj = $client->$method(@_);
+            $obj = $client->$method(@args);
         }
         ERROR $client->errorstring if $client->errorstring;
         next unless $obj;
