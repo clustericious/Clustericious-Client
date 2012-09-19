@@ -23,7 +23,12 @@ route_meta 'put'  => {
         { name => 'for',                    type => '=s', required => 1, doc => 'for whom to bake the bread' },
         { name => 'when',                   type => '=s', required => 0, doc => 'when to bake the bread' },
         { name => 'dry_run',    alt => 'n', type => '',   required => 0, },
-        { name => 'temperature',             type => ':i', required => 0, }
+        { name => 'temperature',            type => ':i', required => 0, }
+    ],
+};
+route_meta 'eat' => {
+    opts => [
+        { name => 'food', type => "=s", preprocess => "yamldoc", doc => "what food to eat" },
     ],
 };
 
@@ -34,15 +39,23 @@ sub put {
     $argsWeGot = [ got => \%args ];
     return [ got => \%args ];
 }
+sub eat {
+    my $self = shift;
+    my %args = @_;
+    $argsWeGot = [ got => \%args ];
+    return [ got => \%args ];
+}
 
 package main;
 use Log::Log4perl qw(:easy);
+use YAML::XS qw/Load Dump/;
 use Clustericious::Client::Command;
 
 # Hide messages during tests
 Log::Log4perl->easy_init({ level => $FATAL,
                            layout => "",
                            stderr => 0 });
+$Clustericious::Client::TESTING=1; # suppress output
 
 my $client = Baker->new(server_url => 'http://127.0.0.1');
 
@@ -73,6 +86,27 @@ is_deeply $argsWeGot, [got => { where => 'in the oven', for => "baby_and_me" }];
     ok $@, "exception for invalid option";
     like $@, qr/invalid/i, 'message has invalid';
 }
+
+my $struct = { some => [ deep => struct => { here => 12 } ] };
+ok $client->eat(food => $struct);
+is_deeply $argsWeGot, [ got => {food => $struct}], "struct sent as a param" or diag explain $argsWeGot;
+undef $argsWeGot;
+
+#ok $client->eat(food => Dump($struct));
+#is_deeply $argsWeGot, [ got => { food => $struct}], "struct sent as yaml";
+#undef $argsWeGot;
+
+my $tmp = File::Temp->new;
+print $tmp Dump($struct);
+close $tmp;
+
+#ok $client->eat(food => "$tmp");
+#is_deeply $argsWeGot, [ got => { food => $struct}], "struct sent as filename";
+#undef $argsWeGot;
+
+Clustericious::Client::Command->run($client, eat => "--food" => "$tmp");
+is_deeply $argsWeGot, [ got => { food => $struct}], "struct sent as filename to command";
+undef $argsWeGot;
 
 done_testing();
 

@@ -209,10 +209,50 @@ sub run {
             next if exists($method_args{$name});
             LOGDIE "Missing value for required argument '$name'\n$doc\n";
         }
-        $client->$method(%method_args);
-        warn '# TODO : autoread some files, allow stdin, dump output';
+        for (@$opts) {
+            my $name = $_->{name};
+            next unless $_->{preprocess};
+            LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc/;
+            my $filename = $method_args{$name} or next;
+            if ($filename eq '-') {
+                my $contents = do { local $\; <STDIN> };
+                $method_args{$name} = Load($contents) or LOGDIE "Cannot parse yaml : $contents";
+            } else {
+                LOGDIE "Cannot read file $filename" unless -r $filename;
+                $method_args{$name} = LoadFile($filename) or LOGDIE "Cannot parse yaml in $filename";
+            }
+        }
+
+        # run
+        my $obj = $client->$method(%method_args);
+
+        ERROR $client->errorstring if $client->errorstring;
+
+        # Copied from below, until that code is deprecated.
+        if ( blessed($obj) && $obj->isa("Mojo::Transaction") ) {
+            if ( my $res = $obj->success ) {
+                print $res->code," ",$res->default_message,"\n";
+            } else {
+                my ( $message, $code ) = $obj->error;
+                ERROR $code if $code;
+                ERROR $message;
+            }
+        } elsif (ref $obj eq 'HASH' && keys %$obj == 1 && $obj->{text}) {
+            print $obj->{text};
+        } elsif ($client->tx && $client->tx->req->method eq 'POST' && $meta->get("quiet_post")) {
+            my $msg = $client->res->code." ".$client->res->default_message;
+            my $got = $client->res->json;
+            if ($got && ref $got eq 'HASH' and keys %$got==1 && $got->{text}) {
+                $msg .= " ($got->{text})";
+            }
+            INFO $msg;
+        } else {
+           print _prettyDump($obj) unless $Clustericious::Client::TESTING;
+        }
         return;
     }
+
+    # Code below here should be deprecated.
 
     my @extra_args = ( '/dev/null' );
     my $have_filenames;
