@@ -108,23 +108,21 @@ use File::Temp;
 This class inherits from L<Mojo::Base>, and handles attributes like
 that class.  The following additional attributes are used.
 
-=over
-
-=item C<client>
+=head2 client
 
 A client to process the HTTP stuff with.  Defaults to a
 L<Mojo::UserAgent>.
 
-=item C<app>
+=head2 app
 
 For testing, you can specify a Mojolicious app name.
 
-=item C<server_url>
+=head2 server_url
 
 You can override the URL prefix for the client, otherwise it
 will look it up in the config file.
 
-=item C<res>
+=head2 res
 
 After an HTTP error, the built methods return undef.  This function
 will return the L<Mojo::Message::Response> from the server.
@@ -157,13 +155,9 @@ sub import
     }
 }
 
-=back
-
 =head1 METHODS
 
-=over
-
-=item C<new>
+=head2 new
 
  my $f = Foo::Client->new();
  my $f = Foo::Client->new(server_url => 'http://someurl');
@@ -224,19 +218,19 @@ sub new
     return $self;
 }
 
-=item tx
+=head2 tx
 
 The most recent HTTP::Transaction.
 
 =cut
 
-=item userinfo
+=head2 userinfo
 
 Credentials currently stored.
 
 =cut
 
-=item remote
+=head2 remote
 
 Tell the client to use the remote information in the configuration.
 For instance, if the config has
@@ -271,7 +265,7 @@ sub remote {
     $self->_remote($remote);
 }
 
-=item remotes
+=head2 remotes
 
 Return a list of available remotes.
 
@@ -283,7 +277,7 @@ sub remotes {
     return keys %found;
 }
 
-=item C<login>
+=head2 login
 
 Log in to the server.  This will send basic auth info
 along with every subsequent request.
@@ -304,7 +298,7 @@ sub login {
     $self->userinfo(join ':', $user,$pw);
 }
 
-=item C<errorstring>
+=head2 errorstring
 
 After an error, this returns an error string made up of the server
 error code and message.  (use res->code and res->message to get the
@@ -324,13 +318,9 @@ sub errorstring
       || sprintf( "(%d) %s", $self->res->code, $self->res->message );
 }
 
-=back
-
 =head1 FUNCTIONS
 
-=over
-
-=item C<route>
+=head2 route
 
  route 'subname';                    # GET /subname
  route subname => '/url';            # GET /url
@@ -396,7 +386,7 @@ sub route
 
 }
 
-=item route_meta
+=head2 route_meta
 
 Set metadata attributes for this route.
 
@@ -417,7 +407,7 @@ sub route_meta {
     $meta->set($_ => $attrs->{$_}) for keys %$attrs;
 }
 
-=item route_args
+=head2 route_args
 
 Set options for this route.  This allows command line options
 to be automatically transformed into method arguments.  route_args
@@ -449,7 +439,7 @@ sub route_args {
     $meta->set(args => $args);
 }
 
-=item C<object>
+=head2 object
 
  object 'objname';                   # defaults to URL /objname
  object objname => '/some/url';
@@ -739,7 +729,7 @@ sub _get_user_pw  {
     return ($user,$pw);
 }
 
-=item meta_for
+=head2 meta_for
 
 Get the metadata for a route.
 
@@ -758,8 +748,6 @@ sub meta_for {
     );
 }
 
-=back
-
 =head1 COMMON ROUTES
 
 These are routes that are automatically supported by all clients.
@@ -767,9 +755,7 @@ See L<Clustericious::RouteBuilder::Common>.  Each of these
 must also be in L<Clustericious::Client::Meta> for there
 to be documentation.
 
-=over
-
-=item version
+=head2 version
 
 Retrieve the version on the server.
 
@@ -782,7 +768,7 @@ sub version {
     $self->_doit($meta, GET => '/version');
 }
 
-=item status
+=head2 status
 
 Retrieve the status from the server.
 
@@ -795,7 +781,7 @@ sub status {
     $self->_doit($meta, GET => '/status');
 }
 
-=item api
+=head2 api
 
 Retrieve the API from the server
 
@@ -808,7 +794,7 @@ sub api {
     $self->_doit( $meta, GET => '/api' );
 }
 
-=item logtail
+=head2 logtail
 
 Get the last N lines of the server log file.
 
@@ -824,7 +810,7 @@ sub _ssh_pidfile {
     sprintf("%s/%s_acps_ssh.pid",($ENV{TMPDIR} || "/tmp"),shift->_appname);
 }
 
-=item ssh_tunnel_is_up
+=head2 ssh_tunnel_is_up
 
 Check to see if an ssh tunnel is alive for the current client.
 
@@ -880,7 +866,7 @@ sub _start_ssh_tunnel {
     DEBUG "new ssh pid is $pid";
 }
 
-=item stop_ssh_tunnel
+=head2 stop_ssh_tunnel
 
 Stop any running ssh tunnel for this client.
 
@@ -902,8 +888,6 @@ sub stop_ssh_tunnel {
     DEBUG "Killed ssh for ".(ref $self)." ($killed)";
     return 1;
 }
-
-=back
 
 =head1 ENVIRONMENT
 
