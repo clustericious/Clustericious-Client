@@ -17,20 +17,16 @@ route_doc 'roll' => "Roll the bread";
 route_doc 'eat'  => "Eat the bread";
 
 route_meta 'bake' => { temperature => "hot" };
-route_meta 'put'  => {
-    opts => [
+route_args 'put' => [
         { name => 'where',                  type => '=s', required => 1, doc => 'where to bake the bread' },
         { name => 'for',                    type => '=s', required => 1, doc => 'for whom to bake the bread' },
         { name => 'when',                   type => '=s', required => 0, doc => 'when to bake the bread' },
         { name => 'dry_run',    alt => 'n', type => '',   required => 0, },
         { name => 'temperature',            type => ':i', required => 0, }
-    ],
-};
-route_meta 'eat' => {
-    opts => [
+    ];
+route_args 'eat' => [
         { name => 'food', type => "=s", preprocess => "yamldoc", doc => "what food to eat" },
-    ],
-};
+    ];
 
 our $argsWeGot;
 sub put {
@@ -55,7 +51,7 @@ use Clustericious::Client::Command;
 Log::Log4perl->easy_init({ level => $FATAL,
                            layout => "",
                            stderr => 0 });
-$Clustericious::Client::TESTING=1; # suppress output
+$Clustericious::Client::Command::TESTING=1; # suppress output
 
 my $client = Baker->new(server_url => 'http://127.0.0.1');
 

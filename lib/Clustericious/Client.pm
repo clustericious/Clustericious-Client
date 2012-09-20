@@ -35,6 +35,15 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
 
  route_meta status => { auto_failover => 1 } # route_meta sets attributes of routes
 
+ route_args status => [
+            {
+                name     => 'full',
+                type     => '=s',
+                required => 0,
+                doc      => 'get a full status',
+            },
+        ];
+
  ----------------------------------------------------------------------
 
  use Foo::Client;
@@ -139,6 +148,7 @@ sub import
     push @{"${caller}::ISA"}, $class unless $caller->isa($class);
     *{"${caller}::route"} = \&route;
     *{"${caller}::route_meta"} = \&route_meta;
+    *{"${caller}::route_args"} = \&route_args;
     *{"${caller}::route_doc"} = sub {
         Clustericious::Client::Meta->add_route( $caller, @_ )
     };
@@ -405,6 +415,38 @@ sub route_meta {
     );
 
     $meta->set($_ => $attrs->{$_}) for keys %$attrs;
+}
+
+=item route_args
+
+Set options for this route.  This allows command line options
+to be automatically transformed into method arguments.  route_args
+associates an array ref with the name of a route.  Each entry
+in the array ref is a hashref which may have keys as shown
+in this example :
+
+  route_args status => [
+            {
+                name     => 'full',              # name of the route
+                type     => '=s',                # type (see L<Getopt::Long>)
+                alt      => 'long|extra|big',    # alternative names
+                required => 0,                   # Is it required?
+                doc      => 'get a full status', # brief documentation
+            },
+        ];
+
+=cut
+
+sub route_args {
+    my $name = shift;
+    my $args = shift;
+    die "args must be an array ref" unless ref $args eq 'ARRAY';
+    my $meta = Clustericious::Client::Meta::Route->new(
+        client_class => scalar caller(),
+        route_name   => $name
+    );
+
+    $meta->set(args => $args);
 }
 
 =item C<object>

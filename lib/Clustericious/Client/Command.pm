@@ -143,8 +143,8 @@ sub _load_yaml {
 sub run {
     my $class = shift;
     my $client = shift;
-    my @args = @_;
-    @args = @ARGV unless @args;
+    my @args = @_ ? @_ : @ARGV;
+    our $TESTING;
 
     return $class->_usage($client) if !$args[0] || $args[0] =~ /help/;
 
@@ -186,30 +186,30 @@ sub run {
         client_class => ref $client
     );
 
-    if (my $opts = $meta->get("opts")) {
-        my %req = map { $_->{required} ? ($_->{name} => 1):() } @$opts;
+    if (my $route_args = $meta->get("args")) {
+        my %req = map { $_->{required} ? ($_->{name} => 1):() } @$route_args;
         my @getopt = map {
              $_->{name}
              .($_->{alt} ? "|$_->{alt}" : "")
              .($_->{type} || '')
-             } @$opts;
+             } @$route_args;
         my %method_args;
 
         my $doc = join "\n", "Valid options for '$method' are :",
           map {
              sprintf('  --%-20s%-15s%s', $_->{name}, $_->{required} ? 'required' : '', $_->{doc} || "" )
-           } @$opts;
+           } @$route_args;
 
         GetOptionsFromArray(\@args, \%method_args, @getopt) or LOGDIE "Invalid options. $doc\n";
 
         LOGDIE "Unknown option : @args\n$doc\n" if @args;
-        for (@$opts) {
+        for (@$route_args) {
             my $name = $_->{name};
             next unless $_->{required};
             next if exists($method_args{$name});
             LOGDIE "Missing value for required argument '$name'\n$doc\n";
         }
-        for (@$opts) {
+        for (@$route_args) {
             my $name = $_->{name};
             next unless $_->{preprocess};
             LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc/;
@@ -247,7 +247,7 @@ sub run {
             }
             INFO $msg;
         } else {
-           print _prettyDump($obj) unless $Clustericious::Client::TESTING;
+           print _prettyDump($obj) unless $TESTING;
         }
         return;
     }
