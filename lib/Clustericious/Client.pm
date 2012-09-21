@@ -34,11 +34,16 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
             },
         ];
 
- route_args my_function => [ { name => 'my_arg' } ];
- sub my_function {
+ route_args wrinkle => [                   # methods correspond to "route"s
+     {
+         name => 'time'
+     }
+ ];
+
+ sub wrinkle {                             # provides cli command as well as a method
     my $c = shift;
     my %args = @_;
-    if ($args{my_arg}) {
+    if ($args{time}) {
             ...
     }
  }
@@ -66,14 +71,14 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
  my $obj = $f->foo('this');                # GET /something/foo/this
 
  $f->status(full => "yes");
- $f->my_function( my_arg => 1 ); 
+ $f->wrinkle( time => 1 ); 
 
  ----------------------
 
  #!/bin/sh
  fooclient status
  fooclient status --full yes
- fooclient my_function --my_arg
+ fooclient wrinkle --time
 
 =head1 DESCRIPTION
 
