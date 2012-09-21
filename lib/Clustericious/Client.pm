@@ -12,30 +12,20 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
 =head1 SYNOPSIS
 
  package Foo::Client;
-
  use Clustericious::Client;
 
  route 'welcome' => '/';                   # GET /
-
  route status;                             # GET /status
-
  route myobj => [ 'MyObject' ];            # GET /myobj
-
  route something => GET => '/some/';
-
  route remove => DELETE => '/something/';
 
  object 'obj';                             # Defaults to /obj
-
  object 'foo' => '/something/foo';         # Can override the URL
 
  route status => \"Get the status";        # Scalar refs are documentation
-
  route_doc status => "Get the status";     # or you can use route_doc
-
- route_meta status => { auto_failover => 1 } # route_meta sets attributes of routes
-
- route_args status => [
+ route_args status => [                    # route_args sets method or cli arguments
             {
                 name     => 'full',
                 type     => '=s',
@@ -43,6 +33,15 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
                 doc      => 'get a full status',
             },
         ];
+
+ route_args my_function => [ { name => 'my_arg' } ];
+ sub my_function {
+    my $c = shift;
+    my %args = @_;
+    if ($args{my_arg}) {
+            ...
+    }
+ }
 
  ----------------------------------------------------------------------
 
@@ -53,25 +52,28 @@ Clustericious::Client - Constructor for clients of Clustericious apps.
  my $f = Foo::Client->new(app => 'MyApp'); # For testing...
 
  my $welcome = $f->welcome();              # GET /
-
  my $status = $f->status();                # GET /status
-
  my $myobj = $f->myobj('key');             # GET /myobj/key, MyObject->new()
-
  my $something = $f->something('this');    # GET /some/this
-
  $f->remove('foo');                        # DELETE /something/foo
 
  my $obj = $f->obj('this', 27);            # GET /obj/this/27
  # Returns either 'Foo::Client::Obj' or 'Clustericious::Client::Object'
 
  $f->obj({ set => 'this' });               # POST /obj
-
  $f->obj('this', 27, { set => 'this' });   # POST /obj/this/27
-
  $f->obj_delete('this', 27);               # DELETE /obj/this/27
-
  my $obj = $f->foo('this');                # GET /something/foo/this
+
+ $f->status(full => "yes");
+ $f->my_function( my_arg => 1 ); 
+
+ ----------------------
+
+ #!/bin/sh
+ fooclient status
+ fooclient status --full yes
+ fooclient my_function --my_arg
 
 =head1 DESCRIPTION
 
@@ -409,25 +411,25 @@ sub route_meta {
 
 =head2 route_args
 
-Set options for this route.  This allows command line options
+Set arguments for this route.  This allows command line options
 to be automatically transformed into method arguments.  route_args
 associates an array ref with the name of a route.  Each entry
 in the array ref is a hashref which may have keys as shown
 in this example :
 
-  route_args status => [
+  route_args send => [
             {
-                name     => 'full',              # name of the route
+                name     => 'what',              # name of the route
                 type     => '=s',                # type (see L<Getopt::Long>)
                 alt      => 'long|extra|big',    # alternative names
                 required => 0,                   # Is it required?
                 doc      => 'get a full status', # brief documentation
             },
             {
-                name     => 'send',              # name of the route
-                type     => '=s',                # type (see L<Getopt::Long>)
-                doc      => 'send a list'        # brief docs
-                preprocess => 'list'            # make an array ref from a list
+                name     => 'items',               # name of the route
+                type     => '=s',                  # type (see L<Getopt::Long>)
+                doc      => 'send a list of items' # brief docs
+                preprocess => 'list'               # make an array ref from a list
             },
         ];
 
@@ -464,6 +466,8 @@ Can be either 'yamldoc' or 'list'.  In both cases, the argument is expected
 to refer to either a filename which exists, or else "-" for STDIN.  The contents
 are then transformed from YAML (for yamldoc), or split on carriage returns (for list)
 to form either a data structure or an arrayref, respectively.
+
+=back
 
 =cut
 
