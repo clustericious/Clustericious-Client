@@ -212,14 +212,20 @@ sub run {
         for (@$route_args) {
             my $name = $_->{name};
             next unless $_->{preprocess};
-            LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc/;
+            LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc|list/;
             my $filename = $method_args{$name} or next;
-            if ($filename eq '-') {
-                my $contents = do { local $\; <STDIN> };
-                $method_args{$name} = Load($contents) or LOGDIE "Cannot parse yaml : $contents";
-            } else {
-                LOGDIE "Cannot read file $filename" unless -r $filename;
-                $method_args{$name} = LoadFile($filename) or LOGDIE "Cannot parse yaml in $filename";
+            LOGDIE "Argument for $name should be a filename, an arrayref or - for STDIN" if $filename && $filename =~ /\n/;
+            LOGDIE "Cannot read file $filename" unless $filename eq '-' || -e $filename;
+            for ($_->{preprocess}) {
+                /yamldoc/ and do {
+                    $method_args{$name} = ($filename eq "-" ? Load(join "",<STDIN>) : LoadFile($filename))
+                            or LOGDIE "Error parsing yaml in ($filename)";
+                    next;
+                };
+                /list/ and do {
+                    $method_args{$name} = [ map { chomp; $_ } IO::File->new("< $filename")->getlines ];
+                    next;
+                };
             }
         }
 

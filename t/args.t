@@ -27,6 +27,11 @@ route_args 'put' => [
 route_args 'eat' => [
         { name => 'food', type => "=s", preprocess => "yamldoc", doc => "what food to eat" },
     ];
+route_args 'fry' => [
+    { name => 'dry_run' },
+    { name => 'what', type => '=s' },
+    { name => 'things', type => '=s', preprocess => 'list' },
+];
 
 our $argsWeGot;
 sub put {
@@ -36,6 +41,12 @@ sub put {
     return [ got => \%args ];
 }
 sub eat {
+    my $self = shift;
+    my %args = @_;
+    $argsWeGot = [ got => \%args ];
+    return [ got => \%args ];
+}
+sub fry {
     my $self = shift;
     my %args = @_;
     $argsWeGot = [ got => \%args ];
@@ -103,6 +114,17 @@ close $tmp;
 Clustericious::Client::Command->run($client, eat => "--food" => "$tmp");
 is_deeply $argsWeGot, [ got => { food => $struct}], "struct sent as filename to command";
 undef $argsWeGot;
+
+# Boolean arg
+$tmp = File::Temp->new;
+print $tmp join "\n", qw/a b c/;
+close $tmp;
+Clustericious::Client::Command->run($client, fry => '--dry_run', '--what' => 'bread', '--things' => "$tmp" );
+is_deeply $argsWeGot, [ got => { what => 'bread', dry_run => 1, things => [qw/a b c/] } ];
+undef $argsWeGot;
+
+$client->fry(things => [qw/a b c/]);
+is_deeply($argsWeGot, [ got => { things => [qw/a b c/] }], "got arrayref for list");
 
 done_testing();
 

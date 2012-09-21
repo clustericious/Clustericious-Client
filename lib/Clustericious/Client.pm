@@ -423,7 +423,47 @@ in this example :
                 required => 0,                   # Is it required?
                 doc      => 'get a full status', # brief documentation
             },
+            {
+                name     => 'send',              # name of the route
+                type     => '=s',                # type (see L<Getopt::Long>)
+                doc      => 'send a list'        # brief docs
+                preprocess => 'list'            # make an array ref from a list
+            },
         ];
+
+The keys have the following effect :
+
+=over
+
+=item name
+
+The name of the option.  This should be preceded by two dashes
+on the command line.  It is also sent as the named argument to the
+method call.
+
+=item type
+
+A type, as described in L<Getopt::Long>.  This will be appended to
+the name to form the option specification.
+
+=item alt
+
+An alternative name or names (joined by |).
+
+=item required
+
+If this arg is required, set this to 1.
+
+=item doc
+
+A brief description to be printed in error messages and help documenation.
+
+=item preprocess
+
+Can be either 'yamldoc' or 'list'.  In both cases, the argument is expected
+to refer to either a filename which exists, or else "-" for STDIN.  The contents
+are then transformed from YAML (for yamldoc), or split on carriage returns (for list)
+to form either a data structure or an arrayref, respectively.
 
 =cut
 
