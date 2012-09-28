@@ -154,7 +154,7 @@ sub run {
     while ($arg = shift @args) {
         for ($arg) {
             /--remote/ and do {
-                my $remote = shift;
+                my $remote = shift @args;
                 TRACE "Using remote $remote";
                 $client->remote($remote);
                 next ARG;
