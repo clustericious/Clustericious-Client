@@ -417,10 +417,10 @@ sub route_meta {
 =head2 route_args
 
 Set arguments for this route.  This allows command line options
-to be automatically transformed into method arguments.  route_args
-associates an array ref with the name of a route.  Each entry
-in the array ref is a hashref which may have keys as shown
-in this example :
+to be transformed into method arguments, and allows normalization
+and validation of method arguements.  route_args associates an array
+ref with the name of a route.  Each entry in the array ref is a hashref
+which may have keys as shown in this example :
 
   route_args send => [
             {
@@ -467,10 +467,14 @@ A brief description to be printed in error messages and help documenation.
 
 =item preprocess
 
-Can be either 'yamldoc' or 'list'.  In both cases, the argument is expected
+Can be either 'yamldoc', 'list' or 'datetime'.
+
+For yamldoc and list, the argument is expected
 to refer to either a filename which exists, or else "-" for STDIN.  The contents
 are then transformed from YAML (for yamldoc), or split on carriage returns (for list)
 to form either a data structure or an arrayref, respectively.
+
+For datetime the string is run through Date::Parse and turned into an ISO 8601 datetime.
 
 =back
 
@@ -790,7 +794,10 @@ Returns a Clustericious::Client::Meta::Route object.
 
 sub meta_for {
     my $self = shift;
-    my $route_name = shift;
+    my $route_name = shift || [ caller 1 ]->[3];
+    if ( $route_name =~ /::([^:]+)$/ ){
+        $route_name = $1;
+    }
     my $meta = Clustericious::Client::Meta::Route->new(
         route_name   => $route_name,
         client_class => ref $self
