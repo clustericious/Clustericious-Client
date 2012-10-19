@@ -7,92 +7,71 @@ our $VERSION = '0.66';
 
 =head1 NAME
 
-Clustericious::Client - Constructor for clients of Clustericious apps.
+Clustericious::Client - Construct command line and perl clients for RESTful services.
 
 =head1 SYNOPSIS
 
- package Foo::Client;
- use Clustericious::Client;
+tracks.pm :
 
- route 'welcome' => '/';                   # GET /
- route status;                             # GET /status
- route myobj => [ 'MyObject' ];            # GET /myobj
- route something => GET => '/some/';
- route remove => DELETE => '/something/';
+    package Tracks;
+    use Clustericious::Client;
 
- object 'obj';                             # Defaults to /obj
- object 'foo' => '/something/foo';         # Can override the URL
+    route 'mixes' => '/mixes.json';
+    route_doc mixes => 'Get a list of mixes.';
+    route_args mixes => [
+        { name => 'api_key', type => '=s', modifies_url => "query", required => 1 },
+        { name => 'per_page',type => '=i', modifies_url => "query", },
+        { name => 'tags',    type => '=s', modifies_url => "query" },
+    ];
 
- route status => \"Get the status";        # Scalar refs are documentation
- route_doc status => "Get the status";     # or you can use route_doc
- route_args status => [                    # route_args sets method or cli arguments
-            {
-                name     => 'full',
-                type     => '=s',
-                required => 0,
-                doc      => 'get a full status',
-            },
-        ];
+tracks.pl :
 
- route_args wrinkle => [                   # methods correspond to "route"s
-     {
-         name => 'time'
-     }
- ];
+    #!/usr/bin/env perl
 
- sub wrinkle {                             # provides cli command as well as a method
-    my $c = shift;
-    my %args = @_;
-    if ($args{time}) {
-            ...
-    }
- }
+    use lib '.';
+    use Log::Log4perl qw/:easy/;
+    Log::Log4perl->easy_init($TRACE);
+    use tracks;
 
- ----------------------------------------------------------------------
+    my $t = Tracks->new(server_url => 'http://8tracks.com' );
+    my $mixes = $t->mixes(
+         tags => 'jazz',
+         api_key => $api_key,
+         per_page => 2,
+         ) or die $t->errorstring;
+    print "Mix : $_->{name}\n" for @{ $mixes->{mixes} };
 
- use Foo::Client;
+tracks_cli :
 
- my $f = Foo::Client->new();
- my $f = Foo::Client->new(server_url => 'http://someurl');
- my $f = Foo::Client->new(app => 'MyApp'); # For testing...
+    #!/usr/bin/env perl
 
- my $welcome = $f->welcome();              # GET /
- my $status = $f->status();                # GET /status
- my $myobj = $f->myobj('key');             # GET /myobj/key, MyObject->new()
- my $something = $f->something('this');    # GET /some/this
- $f->remove('foo');                        # DELETE /something/foo
+    use lib '.';
+    use Clustericious::Client::Command;
+    use tracks;
 
- my $obj = $f->obj('this', 27);            # GET /obj/this/27
- # Returns either 'Foo::Client::Obj' or 'Clustericious::Client::Object'
+    use Log::Log4perl qw/:easy/;
+    Log::Log4perl->easy_init($TRACE);
 
- $f->obj({ set => 'this' });               # POST /obj
- $f->obj('this', 27, { set => 'this' });   # POST /obj/this/27
- $f->obj_delete('this', 27);               # DELETE /obj/this/27
- my $obj = $f->foo('this');                # GET /something/foo/this
+    Clustericious::Client::Command->run(Tracks->new, @ARGV);
 
- $f->status(full => "yes");
- $f->wrinkle( time => 1 ); 
+~/etc/Tracks.conf :
 
- ----------------------
+    ---
+    url : 'http://8tracks.com'
 
- #!/bin/sh
- fooclient status
- fooclient status --full yes
- fooclient wrinkle --time
+$ perl tracks.pl
+$ tracks_cli mixes --api_key foo --tags jazz
 
 =head1 DESCRIPTION
 
-Some very simple helper functions with a clean syntax to build a REST
-type client suitable for Clustericious applications.
+Clustericious::Client is library for construction clients for RESTful
+services.  It provides a mapping between command line arguments, method
+arguments, and URLs.
 
 The builder functions add methods to the client object that translate
 into basic REST functions.  All of the 'built' methods return undef on
 failure of the REST/HTTP call, and auto-decode the returned body into
 a data structure if it is application/json.
-
-Using Clustericious::Client also allows for easy creation of both
-perl APIs and command line clients for a L<Clustericious> server.
-See L<Clustericious::Client::Command>.
 
 =cut
 
@@ -129,12 +108,14 @@ For testing, you can specify a Mojolicious app name.
 You can override the URL prefix for the client, otherwise it
 will look it up in the config file.
 
-=head2 res
+=head2 res, tx
 
 After an HTTP error, the built methods return undef.  This function
 will return the L<Mojo::Message::Response> from the server.
 
 res->code and res->message are the returned HTTP code and message.
+
+tx has the Mojo::Transaction::HTTP object.
 
 =cut
 
@@ -224,12 +205,6 @@ sub new
 
     return $self;
 }
-
-=head2 tx
-
-The most recent HTTP::Transaction.
-
-=cut
 
 =head2 userinfo
 
@@ -694,9 +669,11 @@ sub _doit {
     $self->res($res);
     $self->tx($tx);
 
-    if (($tx->res->code||0) == 401 && !$url->userinfo && ($self->_has_auth || $self->_can_auth)) {
+    my $auth_header;
+    if (($tx->res->code||0) == 401 && ($auth_header = $tx->res->headers->www_authenticate)
+        && !$url->userinfo && ($self->_has_auth || $self->_can_auth)) {
         DEBUG "received code 401, trying again with credentials";
-        my ($realm) = $tx->res->headers->www_authenticate =~ /realm=(.*)$/i;
+        my ($realm) = $auth_header =~ /realm=(.*)$/i;
         my $host = $url->host;
         $self->login( $self->_has_auth ? () : $self->_get_user_pw($host,$realm) );
         return $self->_doit($meta ? $meta : (), @_);
@@ -709,7 +686,7 @@ sub _doit {
             "text/plain";
         };
         return $method =~ /HEAD|DELETE/       ? 1
-            : $content_type eq 'application/json' ? decode_json($res->body)
+            : $content_type =~ qr[application/json] ? decode_json($res->body)
             : $res->body;
     }
 
@@ -769,7 +746,7 @@ sub _mycallback
 
         if ($tx->res->is_status_class(200))
         {
-            my $body = $tx->res->headers->content_type eq 'application/json'
+            my $body = $tx->res->headers->content_type =~ qr[application/json]
                 ? decode_json($tx->res->body) : $tx->res->body;
 
             $cb->($body ? $body : 1);
@@ -1001,6 +978,77 @@ sub stop_ssh_tunnel {
     DEBUG "Killed ssh for ".(ref $self)." ($killed)";
     return 1;
 }
+
+=head1 EXAMPLES
+
+ package Foo::Client;
+ use Clustericious::Client;
+
+ route 'welcome' => '/';                   # GET /
+ route status;                             # GET /status
+ route myobj => [ 'MyObject' ];            # GET /myobj
+ route something => GET => '/some/';
+ route remove => DELETE => '/something/';
+
+ object 'obj';                             # Defaults to /obj
+ object 'foo' => '/something/foo';         # Can override the URL
+
+ route status => \"Get the status";        # Scalar refs are documentation
+ route_doc status => "Get the status";     # or you can use route_doc
+ route_args status => [                    # route_args sets method or cli arguments
+            {
+                name     => 'full',
+                type     => '=s',
+                required => 0,
+                doc      => 'get a full status',
+            },
+        ];
+
+ route_args wrinkle => [                   # methods correspond to "route"s
+     {
+         name => 'time'
+     }
+ ];
+
+ sub wrinkle {                             # provides cli command as well as a method
+    my $c = shift;
+    my %args = @_;
+    if ($args{time}) {
+            ...
+    }
+ }
+
+ ----------------------------------------------------------------------
+
+ use Foo::Client;
+
+ my $f = Foo::Client->new();
+ my $f = Foo::Client->new(server_url => 'http://someurl');
+ my $f = Foo::Client->new(app => 'MyApp'); # For testing...
+
+ my $welcome = $f->welcome();              # GET /
+ my $status = $f->status();                # GET /status
+ my $myobj = $f->myobj('key');             # GET /myobj/key, MyObject->new()
+ my $something = $f->something('this');    # GET /some/this
+ $f->remove('foo');                        # DELETE /something/foo
+
+ my $obj = $f->obj('this', 27);            # GET /obj/this/27
+ # Returns either 'Foo::Client::Obj' or 'Clustericious::Client::Object'
+
+ $f->obj({ set => 'this' });               # POST /obj
+ $f->obj('this', 27, { set => 'this' });   # POST /obj/this/27
+ $f->obj_delete('this', 27);               # DELETE /obj/this/27
+ my $obj = $f->foo('this');                # GET /something/foo/this
+
+ $f->status(full => "yes");
+ $f->wrinkle( time => 1 ); 
+
+ ----------------------
+
+ #!/bin/sh
+ fooclient status
+ fooclient status --full yes
+ fooclient wrinkle --time
 
 =head1 ENVIRONMENT
 
