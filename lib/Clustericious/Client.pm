@@ -336,26 +336,27 @@ sub errorstring
  route subname => DELETE => '/url';  # DELETE /url
  route subname => ['SomeObjectClass'];
  route subname \"<documentation> <for> <some> <args>";
+ route_args subname => [ { name => 'param', type => "=s", modifies_url => 'query' } ]
+ route_args subname => [ { name => 'param', type => "=i", modifies_url => 'append' } ]
 
-Makes a method subname() that does the REST action.  Any scalar
-arguments are tacked onto the end of the url separated by a slash.
-If any argument begins with "--", it and its successor are treated
-as part of URL query string (for a GET request).  If any argument
-begins with a single "-", it and it successor are treated as HTTP
-headers to send (for a GET request).  If you pass a hash
-reference, the method changes to POST and the hash is encoded into
-the body as application/json.
+Makes a method subname() that does the REST action.
 
-A hash reference after a POST method becomes headers.
+ route subname => $url => $doc
 
-A scalar reference as the final argument adds documentation
-about this route which will be displayed by the command-line
-client.
+is equivalent to
+
+ route      subname => $url
+ route_args subname => [ { name => 'all', positional => 'many', modifies_url => 'append' } ];
+ route_doc  subname => $$doc
+
+with the additional differences that GET becomes a POST if the argument is
+a hashref, and heuristics are used to read YAML files and STDIN.
+
+See route_args and route_doc below.
 
 =cut
 
-sub route
-{
+sub route {
     my $subname = shift;
     my $objclass = ref $_[0] eq 'ARRAY' ? shift->[0] : undef;
     my $doc      = ref $_[-1] eq 'SCALAR' ? ${ pop() } : "";
@@ -370,25 +371,22 @@ sub route
 
     $meta->set_doc($doc);
 
-    if ($objclass)
-    {
+    if ($objclass) {
         eval "require $objclass";
         if ($@) {
             LOGDIE "Error loading $objclass : $@" unless $@ =~ /Can't locate/i;
         }
-
-        no strict 'refs';
-        *{caller() . "::$subname"} =
-        sub
-        {
-            my $self = shift;
-            $objclass->new($self->_doit($meta,$method,$url,@_), $self);
-        };
     }
-    else
+
     {
         no strict 'refs';
-        *{caller() . "::$subname"} = sub { shift->_doit($meta,$method,$url,@_); };
+        *{caller() . "::$subname"} = sub {
+            my $self = shift;
+            my @args = $self->meta_for->process_args(@_);
+            my $got = $self->_doit($meta,$method,$url,@args);
+            return $objclass->new($got, $self) if $objclass;
+            return $got;
+        };
     }
 
 }
@@ -475,6 +473,54 @@ are then transformed from YAML (for yamldoc), or split on carriage returns (for 
 to form either a data structure or an arrayref, respectively.
 
 For datetime the string is run through Date::Parse and turned into an ISO 8601 datetime.
+
+=item modifies_url
+
+Describes how the URL is affected by the arguments.  Can be
+'query', 'append', or a code reference.
+
+'query' adds to the query string, e.g.
+
+    route subname '/url'
+    route_args subname => [ { name => 'foo', type => "=s", modifies_url => 'query' } ]
+
+This wlll cause this invocation :
+
+    $foo->subname( "foo" => "bar" )
+
+to send a GET request to /url?foo=bar.
+
+Similarly, 'append' is equivalent to
+
+    sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v }
+
+i.e. append the parameter to the end of the URL path.
+
+If route_args is omitted for a route, then arguments with a '--'
+are treated as part of the query string, and arguments with a '-'
+are treated as HTTP headers (for a GET request).  If a hash
+reference is passed, the method changes to POST and the hash is
+encoded into the body as application/json.
+
+=item positional
+
+Can be 'one' or 'many'.
+
+If set, this is a positional param, not a named param.  i.e.
+getopt will not be used to parse the command line, and
+it will be take from a list sent to the method.  For instance
+
+  route_args subname => [ { name => 'id', positional => 'one' } ];
+
+Then
+
+  $client->subname($id)
+
+or
+
+ commandlineclient subname id
+
+If set to 'many', all occurences will be added to the url.
 
 =back
 
@@ -587,36 +633,47 @@ sub _doit {
 
     $url = Mojo::URL->new($url) unless ref $url;
     my $parameters = $url->query;
-    while (defined(my $arg = shift @args))
-    {
+    my %url_modifier;
+    my %gen_url_modifier = (
+        query => sub { my $name = shift;  sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
+        append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v } },
+    );
+    if ($meta && (my $arg_spec = $meta->get('args'))) {
+        for (@$arg_spec) {
+            my $modifies_url = $_->{modifies_url} or next;
+            if (ref ($modifies_url) eq 'CODE') {
+                $url_modifier{$_->{name}} = $modifies_url;
+            } elsif (my $gen = $gen_url_modifier{$modifies_url}) {
+                $url_modifier{$_->{name}} = $gen->($_->{name});
+            } else  {
+                die "don't understand how to interepret modifies_url=$modifies_url";
+            }
+        }
+    }
+    while (defined(my $arg = shift @args)) {
         if (ref $arg eq 'HASH') {
             $method = 'POST';
             $parameters->append(skip_existing => 1) if $meta && $meta->get("skip_existing");
             $body = encode_json $arg;
             $headers = { 'Content-Type' => 'application/json' };
-        }
-        elsif (ref $arg eq 'CODE')
-        {
+        } elsif (ref $arg eq 'CODE') {
             $cb = $self->_mycallback($arg);
-        }
-        elsif ($method eq "GET" && $arg =~ s/^--//) {
+        } elsif (my $code = $url_modifier{$arg}) {
+            $url = $code->($url, shift @args);
+        } elsif ($method eq "GET" && $arg =~ s/^--//) {
             my $value = shift @args;
             $parameters->append($arg => $value);
-        }
-        elsif ($method eq "GET" && $arg =~ s/^-//) {
+        } elsif ($method eq "GET" && $arg =~ s/^-//) {
             # example: $client->esdt(-range => [1 => 100]);
             my $value = shift @args;
             if (ref $value eq 'ARRAY') {
                 $value = "items=$value->[0]-$value->[1]";
             }
             $headers->{$arg} = $value;
-        }
-        elsif ($method eq "POST" && !ref $arg) {
+        } elsif ($method eq "POST" && !ref $arg) {
             $body = $arg;
             $headers = shift @args if $args[0] && ref $args[0] eq 'HASH';
-        }
-        else
-        {
+        } else {
             push @{ $url->path->parts }, $arg;
         }
     }

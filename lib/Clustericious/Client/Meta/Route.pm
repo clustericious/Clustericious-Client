@@ -20,6 +20,7 @@ documentation and attributes.
 package Clustericious::Client::Meta::Route;
 use Clustericious::Log;
 use Clustericious::Client::Meta;
+use DateTime::Format::DateParse;
 use Getopt::Long qw/GetOptionsFromArray/;
 use Mojo::Base qw/-base/;
 
@@ -95,7 +96,6 @@ Process an array of arguments sent to this route.
 This will look at the the route_arg specification that
 has been set up for this route, and use it to turn
 an array of parameters into hash for use by the method.
-In particular :
 
 If any of the args have a 'preprocess' (list, yamldoc, datetime),
 then those transformations are applied.
@@ -105,18 +105,24 @@ If any required parameters are missing, an exception is thrown.
 If any parameters have an 'alt' entry or are abbreviated, the
 full name is used instead.
 
-Returns a hash of arguments or dies on failure.
+Returns a hash of arguments, dies on failure.
+
+See route_arg for a complete description of how arguments will
+be processed.  Note that modifies_url entries are not processed
+here; that occurs just before the request is made.
 
 =cut
 
 sub process_args {
     my $meta = shift;
     my @args = @_;
-    my $route_args = $meta->get('args') or do { warn "no args"; return @args; };
+    my $cli;
     if (ref $args[0] eq 'HASH' && $args[0]{command_line}) {
-        # Clustericious::Client::Command sets this to indicate cli arguments.
+        $cli = 1;
         shift @args;
-    } else {
+    }
+    my $route_args = $meta->get('args') or return @args;
+    unless ($cli) {
         # method call.
         LOGDIE "Expected name value pairs, not '@args'" unless @args % 2==0;
         my @new;
@@ -141,17 +147,36 @@ sub process_args {
     my %method_args;
     GetOptionsFromArray(\@args, \%method_args, @getopt) or LOGDIE "Invalid options. $doc\n";
 
-    LOGDIE "Unknown option : @args\n$doc\n" if @args;
     for (@$route_args) {
         my $name = $_->{name};
         next unless $_->{required};
         next if exists($method_args{$name});
         LOGDIE "Missing value for required argument '$name'\n$doc\n";
     }
+
+    # Maybe positional params can eat up @args.
+    for (@$route_args) {
+        next unless @args;
+        my $spec = $_->{positional} or next;
+        my $name = $_->{name};
+        for ($spec) {
+            /one/ and do {
+                $method_args{$name} = shift @args;
+                next;
+            };
+            /many/ and do {
+                push @{ $method_args{$name} }, shift @args while @args;
+                next;
+            };
+            die "unknown positional spec : $spec";
+        }
+    }
+
+    LOGDIE "Unknown option : @args\n$doc\n" if @args;
     for (@$route_args) {
         my $name = $_->{name};
         next unless $_->{preprocess};
-        LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc|list/;
+        LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc|list|datetime/;
         my $filename = $method_args{$name} or next;
         LOGDIE "Argument for $name should be a filename, an arrayref or - for STDIN" if $filename && $filename =~ /\n/;
         next if ref $filename eq 'ARRAY';
@@ -164,6 +189,10 @@ sub process_args {
             };
             /list/ and do {
                 $method_args{$name} = [ map { chomp; $_ } IO::File->new("< $filename")->getlines ];
+                next;
+            };
+            /^datetime$/ and do {
+                $method_args{$name} = DateTime::Format::DateParse->parse_datetime($method_args{$name})->iso8601();
                 next;
             };
         }
