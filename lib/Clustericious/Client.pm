@@ -843,9 +843,7 @@ sub meta_for {
 =head1 COMMON ROUTES
 
 These are routes that are automatically supported by all clients.
-See L<Clustericious::RouteBuilder::Common>.  Each of these
-must also be in L<Clustericious::Client::Meta> for there
-to be documentation.
+See L<Clustericious::RouteBuilder::Common>.
 
 =head2 version
 
