@@ -271,7 +271,7 @@ sub run {
             }
             INFO $msg;
         } else {
-           print _prettyDump($obj);
+           print _prettyDump($obj) unless $TESTING;
         }
     }
     return;

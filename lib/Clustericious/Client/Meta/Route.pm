@@ -18,11 +18,13 @@ documentation and attributes.
 =cut
 
 package Clustericious::Client::Meta::Route;
-use Clustericious::Log;
-use Clustericious::Client::Meta;
+use YAML::XS qw/LoadFile/;
 use DateTime::Format::DateParse;
 use Getopt::Long qw/GetOptionsFromArray/;
 use Mojo::Base qw/-base/;
+use Data::Dumper;
+use Clustericious::Log;
+use Clustericious::Client::Meta;
 
 has 'client_class';
 has 'route_name';
@@ -179,15 +181,15 @@ sub process_args {
         LOGDIE "internal error: cannot handle $_->{preprocess}" unless $_->{preprocess} =~ /yamldoc|list|datetime/;
         my $filename = $method_args{$name} or next;
         LOGDIE "Argument for $name should be a filename, an arrayref or - for STDIN" if $filename && $filename =~ /\n/;
-        next if ref $filename eq 'ARRAY';
-        LOGDIE "Cannot read file $filename" unless $filename eq '-' || -e $filename;
         for ($_->{preprocess}) {
             /yamldoc/ and do {
+                next if ref $filename;
                 $method_args{$name} = ($filename eq "-" ? Load(join "",<STDIN>) : LoadFile($filename))
                         or LOGDIE "Error parsing yaml in ($filename)";
                 next;
             };
             /list/ and do {
+                next if ref $filename eq 'ARRAY';
                 $method_args{$name} = [ map { chomp; $_ } IO::File->new("< $filename")->getlines ];
                 next;
             };
