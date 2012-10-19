@@ -59,8 +59,10 @@ tracks_cli :
     ---
     url : 'http://8tracks.com'
 
-$ perl tracks.pl
-$ tracks_cli mixes --api_key foo --tags jazz
+From the command line :
+
+    $ perl tracks.pl
+    $ tracks_cli mixes --api_key foo --tags jazz
 
 =head1 DESCRIPTION
 
