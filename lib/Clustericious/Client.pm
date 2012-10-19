@@ -1050,11 +1050,9 @@ sub stop_ssh_tunnel {
  fooclient status --full yes
  fooclient wrinkle --time
 
-=head1 ENVIRONMENT
+=head1 SEE ALSO
 
-Set ACPS_SUPPRESS_404 to a regular expression in order to
-not print messages when a 404 response is returned from urls
-matching that regex.
+L<Clustericious::Config>, L<Clustericious>, L<Mojolicious>
 
 =head1 AUTHORS
 
