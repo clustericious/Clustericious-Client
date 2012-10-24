@@ -613,7 +613,7 @@ sub _doit {
     my %url_modifier;
     my %gen_url_modifier = (
         query => sub { my $name = shift;  sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
-        append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v } },
+        append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v; $u; } },
     );
     if ($meta && (my $arg_spec = $meta->get('args'))) {
         for (@$arg_spec) {
