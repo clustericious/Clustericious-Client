@@ -33,6 +33,13 @@ route_args 'fry' => [
     { name => 'things', type => '=s', preprocess => 'list' },
 ];
 
+route 'grant' => 'POST' => '/grant';
+route_args 'grant' => [
+  { name => 'user',     type => '=s', modifies_url => 'append', positional => 'one' },
+  { name => 'action',   type => '=s', modifies_url => 'append', positional => 'one' },
+  { name => 'resource', type => '=s', modifies_url => 'append', positional => 'one' },
+];
+
 # TODO ensure no { command_line => 1 } if no route_args.
 our $argsWeGot;
 sub put {
@@ -139,6 +146,10 @@ undef $argsWeGot;
 
 $client->fry(things => [qw/a b c/]);
 is_deeply($argsWeGot, [ got => { things => [qw/a b c/] }], "got arrayref for list");
+
+$client->grant('foo','bar','baz');
+is $client->tx->req->url->path, '/grant/foo/bar/baz';
+
 
 done_testing();
 
