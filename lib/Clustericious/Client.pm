@@ -814,6 +814,7 @@ sub _get_user_pw  {
     my $self = shift;
     my $host = shift;
     my $realm = shift;
+    $realm = '' unless defined $realm;
     return @{ $self->_cache->{$host}{$realm} } if exists($self->_cache->{$host}{$realm});
     # "use"ing causes too many warnings; load on demand.
     require Term::Prompt;
