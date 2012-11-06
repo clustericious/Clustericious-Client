@@ -479,6 +479,14 @@ are treated as HTTP headers (for a GET request).  If a hash
 reference is passed, the method changes to POST and the hash is
 encoded into the body as application/json.
 
+=item modifies_payload
+
+Describes how the parameter modifies the payload.
+
+'array' means push $name => $value onto $body->{$key}
+   ($key should be given in addition to 'array')
+'hash' means set $body->{$name} to $value.
+
 =item positional
 
 Can be 'one' or 'many'.
@@ -611,6 +619,7 @@ sub _doit {
     $url = Mojo::URL->new($url) unless ref $url;
     my $parameters = $url->query;
     my %url_modifier;
+    my %payload_modifer;
     my %gen_url_modifier = (
         query => sub { my $name = shift;  sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
         append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v; $u; } },
@@ -619,13 +628,19 @@ sub _doit {
     if ($meta && (my $arg_spec = $meta->get('args'))) {
         for (@$arg_spec) {
             push @positional_args, $_->{name} if $_->{positional} && $_->{positional} eq 'one';
-            my $modifies_url = $_->{modifies_url} or next;
-            if (ref ($modifies_url) eq 'CODE') {
-                $url_modifier{$_->{name}} = $modifies_url;
-            } elsif (my $gen = $gen_url_modifier{$modifies_url}) {
-                $url_modifier{$_->{name}} = $gen->($_->{name});
-            } else  {
-                die "don't understand how to interepret modifies_url=$modifies_url";
+            if (my $modifies_url = $_->{modifies_url}) {
+                if (ref ($modifies_url) eq 'CODE') {
+                    $url_modifier{$_->{name}} = $modifies_url;
+                } elsif (my $gen = $gen_url_modifier{$modifies_url}) {
+                    $url_modifier{$_->{name}} = $gen->($_->{name});
+                } else  {
+                    die "don't understand how to interepret modifies_url=$modifies_url";
+                }
+            }
+            if (my $modifies_payload = $_->{modifies_payload}) {
+                my $name = $_->{name};
+                my $key = $_->{key};
+                $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; push @{ $body->{$key} }, ( $name => shift); $body };
             }
         }
     }
@@ -642,6 +657,8 @@ sub _doit {
             shift @positional_args;
         } elsif (my $code = $url_modifier{$arg}) {
             $url = $code->($url, shift @args);
+        } elsif (my $code2 = $payload_modifer{$arg}) {
+            $body = $code2->($body, shift @args);
         } elsif ($method eq "GET" && $arg =~ s/^--//) {
             my $value = shift @args;
             $parameters->append($arg => $value);
@@ -667,6 +684,9 @@ sub _doit {
     DEBUG ( (ref $self)." : $method " ._sanitize_url($url));
     $headers->{Connection} ||= 'Close';
     $headers->{Accept}     ||= 'application/json';
+
+    $body = encode_json $body if $body && ref $body eq 'HASH' || ref $body eq 'ARRAY';
+
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
     my $tx = $self->client->build_tx($method, $url, $headers, $body);
