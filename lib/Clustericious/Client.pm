@@ -479,13 +479,13 @@ are treated as HTTP headers (for a GET request).  If a hash
 reference is passed, the method changes to POST and the hash is
 encoded into the body as application/json.
 
-=item modifies_payload
+=item modifies_payload, key
 
 Describes how the parameter modifies the payload.
 
-'array' means push $name => $value onto $body->{$key}
-   ($key should be given in addition to 'array')
 'hash' means set $body->{$name} to $value.
+'array' means push ( $name => $value ) onto $body->{$key}.
+   (key should also be specified)
 
 =item positional
 
