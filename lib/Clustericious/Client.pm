@@ -626,6 +626,9 @@ sub _doit {
     );
     my @positional_args;
     if ($meta && (my $arg_spec = $meta->get('args'))) {
+        my @new_args;
+        my %a;
+        %a = @args unless @args % 2;
         for (@$arg_spec) {
             push @positional_args, $_->{name} if $_->{positional} && $_->{positional} eq 'one';
             if (my $modifies_url = $_->{modifies_url}) {
@@ -637,13 +640,28 @@ sub _doit {
                     die "don't understand how to interepret modifies_url=$modifies_url";
                 }
             }
-            if (my $modifies_payload = $_->{modifies_payload}) {
+            my $modifies_payload = $_->{modifies_payload} || "";
+            if ($modifies_payload eq 'array') {
                 my $name = $_->{name};
-                my $key = $_->{key};
+                my $key = $_->{key} or LOGDIE "No key for $name (modifies_payload=array needs a hash key to act on)";
                 $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; push @{ $body->{$key} }, ( $name => shift); $body };
             }
+            if ($modifies_payload eq 'hash') {
+                my $name = $_->{name};
+                $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; $body->{$name} = shift; $body };
+            }
+
+            if ($_->{positional} && @args) {
+                push @new_args, shift @args;
+                %a = @args unless @args % 2;
+            }
+            if (!$_->{positional}) {
+                push @new_args, ($_->{name} => $a{$_->{name}}) if exists($a{$_->{name}});
+            }
         }
+        @args = @new_args;
     }
+
     while (defined(my $arg = shift @args)) {
         if (ref $arg eq 'HASH') {
             $method = 'POST';
