@@ -51,43 +51,29 @@ route_args 'one_with_args' => [
   { name => 'posarg', type => '=s', positional => "one" },
 ];
 
+route 'payload' => POST => '/payload';
+route_args 'payload' => [
+    { name => 'this', type => '=s', modifies_payload => 'hash' },
+    { name => 'that', type => '=s', modifies_payload => 'array', key => "theother" }
+];
+
 # TODO ensure no { command_line => 1 } if no route_args.
 our $argsWeGot;
-sub put {
+for my $sub (qw/put eat fry ingest one_with_args/) {
+       eval "sub $sub { ".<<'DONE'
     my $self = shift;
     my %args = $self->meta_for->process_args(@_);
     $argsWeGot = [ got => \%args ];
     return [ got => \%args ];
 }
-sub eat {
-    my $self = shift;
-    my %args = $self->meta_for->process_args(@_);
-    $argsWeGot = [ got => \%args ];
-    return [ got => \%args ];
-}
-sub fry {
-    my $self = shift;
-    my %args = $self->meta_for->process_args(@_);
-    $argsWeGot = [ got => \%args ];
-    return [ got => \%args ];
-}
+DONE
+   }
+
 sub legacy {
     my $self = shift;
     my @args = @_;
     $argsWeGot = [ got => \@args ];
     return [ got => \@args ];
-}
-sub ingest {
-    my $c = shift;
-    my %args = $c->meta_for->process_args(@_);
-    $argsWeGot = { got => \%args };
-    return { got => \%args };
-}
-sub one_with_args {
-    my $c = shift;
-    my %args = $c->meta_for->process_args(@_);
-    $argsWeGot = { got => \%args };
-    return { got => \%args };
 }
 
 
@@ -175,11 +161,15 @@ $client->grant('foo','bar','baz');
 is $client->tx->req->url->path, '/grant/foo/bar/baz';
 
 $ret = $client->ingest(archiveset => 100, "first_file", "second_file", "third_file");
-is_deeply($ret, {got => {archiveset => 100, filename => [qw/first_file second_file third_file/]}}, "named and multi-positional")
+is_deeply($ret, [got => {archiveset => 100, filename => [qw/first_file second_file third_file/]}], "named and multi-positional")
     or diag explain $ret;
 
 $ret = $client->one_with_args(somearg => "foo", "flubber");
-is_deeply($ret, { got => {somearg => "foo", posarg => "flubber"} }, "named and positional");
+is_deeply($ret, [ got => {somearg => "foo", posarg => "flubber"} ], "named and positional");
+
+$ret = $client->payload(this => 'foo', that => "bar");
+is_deeply($client->tx->req->json, { this => 'foo', theother => [ 'that' => 'bar' ] } )
+    or diag explain $client->tx->req->json;
 
 done_testing();
 
