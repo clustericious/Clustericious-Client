@@ -683,7 +683,11 @@ sub _doit {
     $headers->{Connection} ||= 'Close';
     $headers->{Accept}     ||= 'application/json';
 
-    $body = encode_json $body if $body && ref $body eq 'HASH' || ref $body eq 'ARRAY';
+    if($body && ref $body eq 'HASH' || ref $body eq 'ARRAY')
+    {
+        $headers->{'Content-Type'} = 'application/json';
+        $body = encode_json $body;
+    }
 
     return $self->client->build_tx($method, $url, $headers, $body, $cb) if $cb;
 
