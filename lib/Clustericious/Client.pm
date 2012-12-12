@@ -604,14 +604,11 @@ sub _doit {
         query => sub { my $name = shift;  sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
         append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v; $u; } },
     );
-    my @positional_args;
     if ($meta && (my $arg_spec = $meta->get('args'))) {
-        # Associate the names of the positional args in the spec with the args
-        # in the incoming parameters.
+        # Order the args using their names, to correspond to their order in the spec.
         my @new_args;
         my %a = @args;
         for (@$arg_spec) {
-            push @positional_args, $_->{name} if $_->{positional} && $_->{positional} eq 'one';
             if (my $modifies_url = $_->{modifies_url}) {
                 if (ref ($modifies_url) eq 'CODE') {
                     $url_modifier{$_->{name}} = $modifies_url;
@@ -632,12 +629,11 @@ sub _doit {
                 $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; $body->{$name} = shift; $body };
             }
 
-            push @new_args, ($_->{name} => $a{$_->{name}}); # if exists($a{$_->{name}});
+            push @new_args, ($_->{name} => $a{$_->{name}});
         }
         @args = @new_args;
     }
 
-    warn "args are @args";
     while (defined(my $arg = shift @args)) {
         if (ref $arg eq 'HASH') {
             $method = 'POST';
@@ -646,9 +642,6 @@ sub _doit {
             $headers = { 'Content-Type' => 'application/json' };
         } elsif (ref $arg eq 'CODE') {
             $cb = $self->_mycallback($arg);
-        } elsif (@positional_args && (my $poscode = $url_modifier{$positional_args[0]})) {
-            $url = $poscode->($url, shift @args);
-            shift @positional_args;
         } elsif (my $code = $url_modifier{$arg}) {
             $url = $code->($url, shift @args);
         } elsif (my $code2 = $payload_modifer{$arg}) {
