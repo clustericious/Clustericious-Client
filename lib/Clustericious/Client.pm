@@ -339,7 +339,7 @@ sub route {
         no strict 'refs';
         *{caller() . "::$subname"} = sub {
             my $self = shift;
-            my @args = $self->meta_for->process_args(@_);
+            my @args = $self->meta_for($subname)->process_args(@_);
             my $got = $self->_doit($meta,$method,$url,@args);
             return $objclass->new($got, $self) if $objclass;
             return $got;
@@ -606,9 +606,10 @@ sub _doit {
     );
     my @positional_args;
     if ($meta && (my $arg_spec = $meta->get('args'))) {
+        # Associate the names of the positional args in the spec with the args
+        # in the incoming parameters.
         my @new_args;
-        my %a;
-        %a = @args unless @args % 2;
+        my %a = @args;
         for (@$arg_spec) {
             push @positional_args, $_->{name} if $_->{positional} && $_->{positional} eq 'one';
             if (my $modifies_url = $_->{modifies_url}) {
@@ -631,17 +632,12 @@ sub _doit {
                 $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; $body->{$name} = shift; $body };
             }
 
-            if ($_->{positional} && @args) {
-                push @new_args, shift @args;
-                %a = @args unless @args % 2;
-            }
-            if (!$_->{positional}) {
-                push @new_args, ($_->{name} => $a{$_->{name}}) if exists($a{$_->{name}});
-            }
+            push @new_args, ($_->{name} => $a{$_->{name}}); # if exists($a{$_->{name}});
         }
         @args = @new_args;
     }
 
+    warn "args are @args";
     while (defined(my $arg = shift @args)) {
         if (ref $arg eq 'HASH') {
             $method = 'POST';
@@ -651,7 +647,7 @@ sub _doit {
         } elsif (ref $arg eq 'CODE') {
             $cb = $self->_mycallback($arg);
         } elsif (@positional_args && (my $poscode = $url_modifier{$positional_args[0]})) {
-            $url = $poscode->($url, $arg);
+            $url = $poscode->($url, shift @args);
             shift @positional_args;
         } elsif (my $code = $url_modifier{$arg}) {
             $url = $code->($url, shift @args);
