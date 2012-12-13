@@ -598,40 +598,43 @@ sub _doit {
 
     $url = Mojo::URL->new($url) unless ref $url;
     my $parameters = $url->query;
+
+    # Set up mappings from parameter names to modifier callbacks.
     my %url_modifier;
     my %payload_modifer;
     my %gen_url_modifier = (
-        query => sub { my $name = shift;  sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
-        append => sub { my $name = shift; sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v; $u; } },
+        query  => sub { my $name = shift;
+            sub { my ($u,$v) = @_; $u->query({$name => $v}) }  },
+        append => sub { my $name = shift;
+            sub { my ($u,$v) = @_; push @{ $u->path->parts } , $v; $u; } },
+    );
+    my %gen_payload_modifier = (
+        array => sub {
+            my ( $name, $key ) = @_;
+            LOGDIE "missing key for array payload modifier" unless $key;
+            sub { my $body = shift; $body ||= {}; push @{ $body->{$key} }, ( $name => shift ); $body; }
+        },
+        hash => sub {
+            my $name = shift;
+            sub { my $body = shift; $body ||= {}; $body->{$name} = shift; $body; }
+        },
     );
     if ($meta && (my $arg_spec = $meta->get('args'))) {
-        # Order the args using their names, to correspond to their order in the spec.
-        my @new_args;
-        my %a = @args;
         for (@$arg_spec) {
+            my $name = $_->{name};
             if (my $modifies_url = $_->{modifies_url}) {
-                if (ref ($modifies_url) eq 'CODE') {
-                    $url_modifier{$_->{name}} = $modifies_url;
-                } elsif (my $gen = $gen_url_modifier{$modifies_url}) {
-                    $url_modifier{$_->{name}} = $gen->($_->{name});
-                } else  {
-                    die "don't understand how to interepret modifies_url=$modifies_url";
-                }
+                $url_modifier{$name} =
+                    ref($modifies_url) eq 'CODE'            ? $modifies_url
+                 :  ($a = $gen_url_modifier{$modifies_url}) ? $a->($name)
+                 :  die "don't understand how to interpret modifies_url=$modifies_url";
             }
-            my $modifies_payload = $_->{modifies_payload} || "";
-            if ($modifies_payload eq 'array') {
-                my $name = $_->{name};
-                my $key = $_->{key} or LOGDIE "No key for $name (modifies_payload=array needs a hash key to act on)";
-                $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; push @{ $body->{$key} }, ( $name => shift); $body };
+            if (my $modifies_payload = $_->{modifies_payload}) {
+                 $payload_modifer{$name} =
+                    ref($modifies_payload) eq 'CODE' ? $modifies_payload
+                 : ($a = $gen_payload_modifier{$modifies_payload}) ? $a->($name,$_->{key})
+                 : LOGDIE "don't understand how to interpret modifies_payload=$modifies_payload";
             }
-            if ($modifies_payload eq 'hash') {
-                my $name = $_->{name};
-                $payload_modifer{$name} = sub { my $body = shift; $body ||= {}; $body->{$name} = shift; $body };
-            }
-
-            push @new_args, ($_->{name} => $a{$_->{name}});
         }
-        @args = @new_args;
     }
 
     while (defined(my $arg = shift @args)) {
