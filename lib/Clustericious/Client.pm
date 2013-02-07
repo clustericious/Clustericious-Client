@@ -23,6 +23,19 @@ tracks.pm :
         { name => 'per_page',type => '=i', modifies_url => "query", },
         { name => 'tags',    type => '=s', modifies_url => "query" },
     ];
+    # a 'mixes' method will be constructed automatically.
+    # a 'mixes' command line parameter will be recognized automatically.
+
+    route 'play' => '/play.json';
+    route_args play => [
+        { name => 'token', type => '=s', modifies_url => 'query', required => 1 }
+    ];
+    sub play {
+        my $c = shift;
+        my %args = $c->meta_for->process_args(@_);
+        # do something with $args{token}
+    }
+    # A 'play' command line parameter will call the above method.
 
 tracks.pl :
 
