@@ -340,6 +340,7 @@ sub route {
     );
 
     $meta->set(method => $method);
+    $meta->set(url    => $url);
     $meta->set_doc($doc);
 
     if ($objclass) {
