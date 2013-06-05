@@ -2,6 +2,15 @@ Revision history for Clustericious-Client
 
         - Documentation
 
+0.80    Fri May 10 19:31:03 EDT 2013
+        Fix metadata
+
+0.79    Fri May 10 13:54:06 EDT 2013
+        Add $VERSION to each module within distribution
+
+0.78    Thu May  9 16:56:22 EDT 2013
+        Fixed POD errors
+
 0.77    Tue Mar 12 08:39:20 EDT 2013
         added $url to meta (Graham)
 

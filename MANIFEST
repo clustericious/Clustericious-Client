@@ -24,3 +24,6 @@ t/object_derived.t
 t/params.t
 t/pod.t
 t/podcoverage.t
+dist.ini
+.travis.yml
+util/perl-reversion
