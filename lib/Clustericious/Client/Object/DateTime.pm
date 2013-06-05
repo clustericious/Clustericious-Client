@@ -2,7 +2,7 @@ package Clustericious::Client::Object::DateTime;
 
 =head1 NAME
 
-Clustericious::Client::Object::DateTime
+Clustericious::Client::Object::DateTime - Clustericious DateTime object
 
 =head1 SYNOPSIS
 
