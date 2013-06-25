@@ -4,7 +4,7 @@
       "Curt Tilmes <Curt.Tilmes@nasa.gov>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Module::Build version 0.4003, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Module::Build version 0.4002, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "unknown"
    ],
@@ -21,7 +21,7 @@
    "prereqs" : {
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.40"
+            "Module::Build" : "0.4"
          }
       },
       "runtime" : {
@@ -71,5 +71,14 @@
       }
    },
    "release_status" : "stable",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/plicease/Clustericious-Client/issues"
+      },
+      "homepage" : "http://perl.wdlabs.com/Clustericious-Client",
+      "repository" : {
+         "url" : "git://github.com/plicease/Clustericious-Client.git"
+      }
+   },
    "version" : "0.81"
 }
