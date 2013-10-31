@@ -2,6 +2,8 @@ Clustericious::Config
 Clustericious::Log
 Data::Dumper
 Data::Rmap
+Date::Parse
+DateTime
 DateTime::Format::DateParse
 DateTime::Format::ISO8601
 File::Temp
