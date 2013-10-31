@@ -1,5 +1,3 @@
-=pod
-
 =head1 NAME
 
 Clustericious::Client - Construct command line and perl clients for RESTful services.
@@ -464,13 +462,13 @@ L<Clustericious::Config>, L<Clustericious>, L<Mojolicious>
 
 =head1 AUTHOR
 
-original author: Brian Duggan
+original author: Curt Tilmes
 
 current maintainer: Graham Ollis <plicease@cpan.org>
 
 contributors:
 
-Curt Tilmes
+Brian Duggan
 
 =head1 COPYRIGHT AND LICENSE
 
