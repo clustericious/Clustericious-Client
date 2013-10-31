@@ -1,4 +1,8 @@
-Revision history for Clustericious-Client
+Revision history for {{$dist->name}}
+
+{{$NEXT}}
+  - migrate to Dist::Zilla
+  - Mojolicious 4.50 compatability (remove warning only)
 
 0.83    Sat Aug 31 14:29:08 EDT 2013
   - Update prereqs

@@ -1,8 +1,10 @@
 package Clustericious::Client::Command;
 
-=head1 NAME
+use strict;
+use warnings;
 
-Clustericious::Client::Command - Command line type processing for clients.
+# ABSTRACT: Command line type processing for clients.
+# VERSION
 
 =head1 SYNOPSIS
 
@@ -26,12 +28,13 @@ Then
 This will try to take command line arguments and call the right client
 methods.
 
-Calling 'fooclient bar baz' is equivalent to Foo::Client->new()->bar("baz").
+Calling C<fooclient bar baz> is equivalent to 
+C<Foo::Client-E<gt>new()-E<gt>bar("baz")>.
 
 =head1 CAVEATS
 
 There are currently a few heuristics used when one of the arguments
-is a filename (i.e. is it a yaml file that should be parsed and send
+is a filename (i.e. is it a YAML file that should be parsed and send
 as a hashref, or a filename that should be PUT?  Should STDIN be
 used?).  These need to be formalized and documented.
 
@@ -39,14 +42,7 @@ used?).  These need to be formalized and documented.
 
 This is a beta release, the API is subject to change without notice.
 
-=head1 TODO
-
-Document and stabilize the API.
-
 =cut
-
-use strict;
-use warnings;
 
 use File::Basename qw/basename/;
 use YAML::XS qw(Load Dump LoadFile);
@@ -57,8 +53,6 @@ use File::Temp;
 
 use Clustericious::Log;
 use Clustericious::Client::Meta;
-
-our $VERSION = '0.83';
 
 sub _usage {
     my $class = shift;

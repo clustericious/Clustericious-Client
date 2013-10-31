@@ -1,21 +1,17 @@
-=head1 NAME
-
-Clustericious::Client::Meta - simple meta object for constructing clients
-
-=head1 METHODS
-
-=cut
-
 package Clustericious::Client::Meta;
+
 use strict;
 use warnings;
 
-our $VERSION = '0.83';
+# ABSTRACT: simple meta object for constructing clients
+# VERSION
 
 our %Routes; # hash from class name to array ref of routes.
 our %RouteAttributes; # hash from class name to hash ref of attributes.
 our %Objects; # hash from class name to array ref of objects.
 our @CommonRoutes = ( [ "version" => '' ], [ "status" => '' ], [ "api" => '' ], [ "logtail" => '' ] );
+
+=head1 METHODS
 
 =head2 add_route
 

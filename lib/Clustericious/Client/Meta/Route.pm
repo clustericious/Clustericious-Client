@@ -1,6 +1,17 @@
-=head1 NAME
+package Clustericious::Client::Meta::Route;
 
-Clustericious::Client::Meta::Route - metadata about a route
+use strict;
+use warnings;
+use YAML::XS qw/LoadFile/;
+use DateTime::Format::DateParse;
+use Getopt::Long qw/GetOptionsFromArray/;
+use Mojo::Base qw/-base/;
+use Data::Dumper;
+use Clustericious::Log;
+use Clustericious::Client::Meta;
+
+# ABSTRACT: metadata about a route'
+# VERSION
 
 =head1 DESCRIPTION
 
@@ -16,17 +27,6 @@ documentation and attributes.
     $meta->get('auto_failover');
 
 =cut
-
-package Clustericious::Client::Meta::Route;
-use YAML::XS qw/LoadFile/;
-use DateTime::Format::DateParse;
-use Getopt::Long qw/GetOptionsFromArray/;
-use Mojo::Base qw/-base/;
-use Data::Dumper;
-use Clustericious::Log;
-use Clustericious::Client::Meta;
-
-our $VERSION = '0.83';
 
 has 'client_class';
 has 'route_name';
@@ -101,7 +101,7 @@ This will look at the the route_arg specification that
 has been set up for this route, and use it to turn
 an array of parameters into hash for use by the method.
 
-If any of the args have a 'preprocess' (list, yamldoc, datetime),
+If any of the args have a 'preprocess' (C<list>, C<yamldoc>, C<datetime>),
 then those transformations are applied.
 
 If any required parameters are missing, an exception is thrown.
