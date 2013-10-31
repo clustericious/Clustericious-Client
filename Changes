@@ -1,0 +1,66 @@
+Revision history for Clustericious-Client
+
+0.83_01   2013-10-31 08:28:28 America/New_York
+  - migrate to Dist::Zilla
+  - Mojolicious 4.50 compatability (remove warning only)
+
+0.83    Sat Aug 31 14:29:08 EDT 2013
+  - Update prereqs
+
+0.82    Tue Jun 25 12:18:48 EDT 2013
+        - Update project metadata
+
+0.81    Wed Jun  5 13:32:21 EDT 2013
+        - Documentation
+
+0.80    Fri May 10 19:31:03 EDT 2013
+        Fix metadata
+
+0.79    Fri May 10 13:54:06 EDT 2013
+        Add $VERSION to each module within distribution
+
+0.78    Thu May  9 16:56:22 EDT 2013
+        Fixed POD errors
+
+0.77    Tue Mar 12 08:39:20 EDT 2013
+        added $url to meta (Graham)
+
+0.76    Fri Mar  8 13:46:19 EST 2013
+        has_error()
+        added $method to meta (Graham)
+
+0.75    Thu Dec 13 06:36:33 PST 2012
+        Fixed handling of required positional args.
+
+0.74    Thu Dec 13 05:35:28 PST 2012
+        Fixed bugs in arg processing for positional args.
+
+0.73    Thu Nov 29 14:17:34 EST 2012
+        fixed json content-type header for some routes
+        removed ssl tunnel support
+
+0.72    Thu Nov  8 08:57:11 EST 2012
+        modifies_payload
+
+0.71    Fri Nov  2 14:34:27 EDT 2012
+        Fix handling of 'alt' for required args
+
+0.70    Thu Nov  1 10:18:14 EDT 2012
+        fixes to many/one arg handling
+        allow empty realms (Graham)
+
+0.68    Mon Oct 22 11:45:11 EDT 2012
+        fixed dependency
+
+0.67    Fri Oct 19 15:11:36 EDT 2012
+        improved route_args, many more docs
+
+0.66     Fri Sep 21 15:17:58 EDT 2012
+         route_args and more docs
+
+0.65     Mon Aug 27 10:43:54 EDT 2012
+         Portability (Graham)
+
+0.64     Fri Aug 17 08:26:14 EDT 2012
+         first release
+

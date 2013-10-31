@@ -1,0 +1,71 @@
+{
+   "abstract" : "Construct command line and perl clients for RESTful services.",
+   "author" : [
+      "Graham Ollis <plicease@cpan.org>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 4.300021, CPAN::Meta::Converter version 2.120921",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Clustericious-Client",
+   "no_index" : {
+      "directory" : [
+         "share",
+         "example"
+      ]
+   },
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Clustericious::Config" : "0.01",
+            "Clustericious::Log" : "0",
+            "Data::Rmap" : "0",
+            "Date::Parse" : "0",
+            "DateTime" : "0",
+            "DateTime::Format::DateParse" : "0",
+            "DateTime::Format::ISO8601" : "0",
+            "JSON::XS" : "0",
+            "Log::Log4perl" : "0",
+            "Log::Log4perl::CommandLine" : "0",
+            "MojoX::Log::Log4perl" : "0",
+            "Mojolicious" : "1.65",
+            "Term::Prompt" : "0",
+            "YAML::XS" : "0"
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::More" : "0"
+         }
+      }
+   },
+   "release_status" : "testing",
+   "resources" : {
+      "bugtracker" : {
+         "web" : "https://github.com/plicease/clustericious-client/issues"
+      },
+      "homepage" : "http://perl.wdlabs.com/Clustericious-Client/",
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/plicease/clustericious-client.git",
+         "web" : "https://github.com/plicease/clustericious-client"
+      }
+   },
+   "version" : "0.83_01"
+}
+
