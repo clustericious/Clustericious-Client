@@ -180,8 +180,9 @@ sub new
     {
         my $app = $self->{app};
         $app = $app->new() unless ref($app);
-        my $client = Mojo::UserAgent->new(app => $app)
-            or return undef;
+        my $client = Mojo::UserAgent->new;
+        return undef unless $client;
+        eval { $client->server->app($app) } // $client->app($app);
 
         $self->client($client);
     }
