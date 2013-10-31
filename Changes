@@ -1,6 +1,8 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+
+0.83_01   2013-10-31 08:28:28 America/New_York
   - migrate to Dist::Zilla
   - Mojolicious 4.50 compatability (remove warning only)
 

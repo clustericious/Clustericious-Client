@@ -4,7 +4,7 @@ Clustericious::Client - Construct command line and perl clients for RESTful serv
 
 =head1 VERSION
 
-version 0.83
+version 0.83_01
 
 =head1 SYNOPSIS
 
