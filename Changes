@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+  - promote to production
 
 0.83_01   2013-10-31 08:28:28 America/New_York
   - migrate to Dist::Zilla
