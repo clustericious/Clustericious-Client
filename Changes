@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+  - more diagnostics for automated testing
 
 0.84      2013-11-02 19:04:47 America/New_York
   - promote to production
