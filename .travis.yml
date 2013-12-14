@@ -1,6 +1,8 @@
 language: perl
 
 install:
+  - cpanm -n Dist::Zilla
+  - dzil authordeps --missing | cpanm -n
   - cpanm -n Clustericious::Config 
   - cpanm -n Clustericious::Log
   - cpanm -n Log::Log4perl::CommandLine
@@ -10,11 +12,9 @@ install:
   - cpanm -n DateTime::Format::DateParse
   - cpanm -n Data::Rmap
   - cpanm -n Term::Prompt
+  - cpanm -n Test::CPAN::Changes Test::EOL Test::Fixme Test::NoTabs Test::Pod::Spelling::CommonMistakes Test::Spelling Test::Strict Test::Version || true
 
-before_script:
-  - perl Build.PL
-
-script: HARNESS_IS_VERBOSE=1 prove -lvr t
+script: dzil test -v
 
 perl:
   - "5.19"
