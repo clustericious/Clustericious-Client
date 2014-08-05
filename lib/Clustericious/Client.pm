@@ -1,6 +1,6 @@
 package Clustericious::Client;
 
-use strict; no strict 'refs';
+use strict;
 use warnings;
 
 # ABSTRACT: Construct command line and perl clients for RESTful services.
