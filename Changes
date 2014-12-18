@@ -1,6 +1,7 @@
 Revision history for {{$dist->name}}
 
 {{$NEXT}}
+  - mojo 5.x compat
 
 0.85      2013-11-05 10:43:41 America/New_York
   - more diagnostics for automated testing

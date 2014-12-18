@@ -9,7 +9,7 @@ BEGIN {
    $ok = 1 unless $@;
 }
 
-use Test::More $ok ? (tests => 5) : ( skip_all => "No Clustericious::App" );
+use Test::More $ok ? (tests => 7) : ( skip_all => "No Clustericious::App" );
 
 Log::Log4perl->easy_init(level => "WARN");
 
@@ -47,6 +47,7 @@ use Clustericious::Client;
 route 'welcome' => '/';
 route_doc 'welcome' => "Say hello";
 route_meta 'welcome' => { jambo => 'sana' };
+route 'broken' => '/borked';
 
 object 'foo';
 
@@ -65,5 +66,8 @@ is_deeply($client->foo('a'), $test_obj, 'Retrieve object');
 is($client->meta_for("welcome")->get("jambo"), "sana", "Set metadata");
 
 is($client->meta_for("welcome")->doc, "Say hello", "Set metadata");
+
+is($client->broken, undef, 'client.broken');
+is $client->errorstring, '(404) Not Found', 'client.errormessage';
 
 1;

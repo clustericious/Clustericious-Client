@@ -290,8 +290,19 @@ sub errorstring {
     WARN "Missing response in client object" unless $self->res;
     return unless $self->res;
     return if $self->res->code && $self->res->is_status_class(200);
-    $self->res->error
-      || sprintf( "(%d) %s", $self->res->code, $self->res->message );
+    my $error = $self->res->error;
+    if(defined $error->{advice})
+    {
+        return sprintf("[%d] %s", $error->{advice}, $error->{message});
+    }
+    elsif(defined $error->{code})
+    {
+        return sprintf( "(%d) %s", $error->{code}, $error->{message});
+    }
+    else
+    {
+        return $error->{message};
+    }
 }
 
 =head2 has_error
@@ -745,7 +756,8 @@ sub _doit {
     }
 
     # Failed.
-    my ($msg,$code) = $tx->error;
+    my $err = $tx->error;
+    my ($msg, $code) = ($err->{message}, $err->{code});
     $msg ||= 'unknown error';
     my $s_url = _sanitize_url($url);
 
