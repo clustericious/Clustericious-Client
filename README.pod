@@ -1,5 +1,7 @@
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 Clustericious::Client - Construct command line and perl clients for RESTful services.
@@ -88,6 +90,12 @@ The builder functions add methods to the client object that translate
 into basic REST functions.  All of the 'built' methods return undef on
 failure of the REST/HTTP call, and auto-decode the returned body into
 a data structure if it is application/json.
+
+=head1 MOVED
+
+This is the old version of L<Clustericious::Client> from before it was merged
+back into core L<Clustericious>.  Please see the L<Clustericious> main repository
+here: L<https://github.com/clustericious/Clustericious-Client>.
 
 =head1 ATTRIBUTES
 
@@ -464,11 +472,11 @@ L<Clustericious::Config>, L<Clustericious>, L<Mojolicious>
 
 =head1 AUTHOR
 
-original author: Curt Tilmes
+Original author: Curt Tilmes
 
-current maintainer: Graham Ollis <plicease@cpan.org>
+Current maintainer: Graham Ollis E<lt>plicease@cpan.orgE<gt>
 
-contributors:
+Contributors:
 
 Brian Duggan
 

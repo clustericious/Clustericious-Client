@@ -6,6 +6,12 @@ use warnings;
 # ABSTRACT: Construct command line and perl clients for RESTful services.
 # VERSION
 
+=head1 MOVED
+
+This is the old version of L<Clustericious::Client> from before it was merged
+back into core L<Clustericious>.  Please see the L<Clustericious> main repository
+here: L<https://github.com/clustericious/Clustericious-Client>.
+
 =head1 SYNOPSIS
 
 tracks.pm :
