@@ -10,7 +10,7 @@ use warnings;
 
 This is the old version of L<Clustericious::Client> from before it was merged
 back into core L<Clustericious>.  Please see the L<Clustericious> main repository
-here: L<https://github.com/clustericious/Clustericious-Client>.
+here: L<https://github.com/clustericious/Clustericious>.
 
 =head1 SYNOPSIS
 
